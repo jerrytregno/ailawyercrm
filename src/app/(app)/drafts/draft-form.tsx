@@ -2,15 +2,12 @@
 'use client';
 
 import { useActionState, useEffect, useState } from 'react';
-import { useForm, useWatch } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Copy, Download, Send, Bot, Loader2, Sparkles } from 'lucide-react';
-import { collection, getDocs, QueryDocumentSnapshot, DocumentData } from "firebase/firestore";
 
 import { createDraft } from './actions';
-import { db } from "@/lib/firebase";
-import { type Lead } from "@/lib/types";
 import { Button } from '@/components/ui/button';
 import {
   Form,
@@ -24,13 +21,6 @@ import {
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { useToast } from '@/hooks/use-toast';
 
 const DraftSchema = z.object({
@@ -83,9 +73,6 @@ export function DraftForm({ clientId, leadName, caseDetails }: { clientId?: stri
     error: false,
   });
   
-  const [leads, setLeads] = useState<Lead[]>([]);
-  const [loadingLeads, setLoadingLeads] = useState(true);
-
   const form = useForm<DraftFormValues>({
     resolver: zodResolver(DraftSchema),
     defaultValues: {
@@ -96,62 +83,14 @@ export function DraftForm({ clientId, leadName, caseDetails }: { clientId?: stri
     },
   });
 
-  const selectedClientId = useWatch({
-    control: form.control,
-    name: 'clientName',
-  });
-
   useEffect(() => {
-    async function fetchLeads() {
-      try {
-        const querySnapshot = await getDocs(collection(db, "users"));
-        const leadsData: Lead[] = querySnapshot.docs
-            .map((doc: QueryDocumentSnapshot<DocumentData>) => {
-                const data = doc.data();
-                return {
-                    id: doc.id,
-                    name: data.name || '',
-                    email: data.email || '',
-                    whatsapp: data.whatsapp || '',
-                    language: data.language || '',
-                    amount: data.amount || '',
-                    createdAt: data.created_at?.toDate ? data.created_at.toDate().toISOString() : new Date(data.created_at).toISOString(),
-                    voice_transcript: data.voice_transcript || '',
-                    status: 'New'
-                } as Lead
-            })
-            .filter(lead => lead.name); // Filter out leads with no name
-        setLeads(leadsData);
-        if (leadName && !caseDetails) {
-            const selectedLead = leadsData.find(lead => lead.name === leadName);
-            if (selectedLead && selectedLead.voice_transcript) {
-                form.setValue('caseDetails', selectedLead.voice_transcript);
-            }
-        }
-      } catch (error) {
-        console.error("Error fetching leads:", error);
-        toast({
-            variant: 'destructive',
-            title: 'Error',
-            description: 'Failed to load leads data.',
-        });
-      } finally {
-        setLoadingLeads(false);
-      }
+    if (leadName) {
+      form.setValue('clientName', leadName);
     }
-    fetchLeads();
-  }, [leadName, caseDetails, form, toast]);
-
-  useEffect(() => {
-    if(selectedClientId) {
-        const selectedLead = leads.find(lead => lead.id === selectedClientId);
-        if (selectedLead && selectedLead.voice_transcript) {
-            form.setValue('caseDetails', selectedLead.voice_transcript);
-        } else {
-            form.setValue('caseDetails', '');
-        }
+    if (caseDetails) {
+      form.setValue('caseDetails', caseDetails);
     }
-  }, [selectedClientId, leads, form]);
+  }, [leadName, caseDetails, form]);
 
 
   useEffect(() => {
@@ -187,18 +126,9 @@ export function DraftForm({ clientId, leadName, caseDetails }: { clientId?: stri
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Client Name</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                            <SelectTrigger disabled={loadingLeads}>
-                                <SelectValue placeholder={loadingLeads ? "Loading leads..." : "Select a client"} />
-                            </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                            {leads.map(lead => (
-                                <SelectItem key={lead.id} value={lead.id}>{lead.name}</SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
+                    <FormControl>
+                        <Input {...field} readOnly={!!leadName} />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
