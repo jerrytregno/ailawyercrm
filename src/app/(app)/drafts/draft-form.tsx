@@ -75,7 +75,7 @@ function SubmitButton() {
     );
 }
 
-export function DraftForm({ clientId, leadName }: { clientId?: string, leadName?: string }) {
+export function DraftForm({ clientId, leadName, caseDetails }: { clientId?: string, leadName?: string, caseDetails?: string }) {
   const { toast } = useToast();
   const [formState, formAction] = useActionState(createDraft, {
     message: '',
@@ -90,13 +90,13 @@ export function DraftForm({ clientId, leadName }: { clientId?: string, leadName?
     resolver: zodResolver(DraftSchema),
     defaultValues: {
       clientName: leadName || '',
-      caseDetails: '',
+      caseDetails: caseDetails || '',
       documentType: '',
       relevantJurisdiction: '',
     },
   });
 
-  const selectedClientName = useWatch({
+  const selectedClientId = useWatch({
     control: form.control,
     name: 'clientName',
   });
@@ -122,7 +122,7 @@ export function DraftForm({ clientId, leadName }: { clientId?: string, leadName?
             })
             .filter(lead => lead.name); // Filter out leads with no name
         setLeads(leadsData);
-        if (leadName) {
+        if (leadName && !caseDetails) {
             const selectedLead = leadsData.find(lead => lead.name === leadName);
             if (selectedLead && selectedLead.voice_transcript) {
                 form.setValue('caseDetails', selectedLead.voice_transcript);
@@ -140,18 +140,18 @@ export function DraftForm({ clientId, leadName }: { clientId?: string, leadName?
       }
     }
     fetchLeads();
-  }, [leadName, form, toast]);
+  }, [leadName, caseDetails, form, toast]);
 
   useEffect(() => {
-    if(selectedClientName) {
-        const selectedLead = leads.find(lead => lead.name === selectedClientName);
+    if(selectedClientId) {
+        const selectedLead = leads.find(lead => lead.id === selectedClientId);
         if (selectedLead && selectedLead.voice_transcript) {
             form.setValue('caseDetails', selectedLead.voice_transcript);
         } else {
             form.setValue('caseDetails', '');
         }
     }
-  }, [selectedClientName, leads, form]);
+  }, [selectedClientId, leads, form]);
 
 
   useEffect(() => {

@@ -1,3 +1,4 @@
+
 import { DraftForm } from './draft-form';
 import {
   Card,
@@ -10,6 +11,7 @@ import {
 export default function DraftsPage({ searchParams }: { searchParams: { [key: string]: string | string[] | undefined } }) {
   const clientId = typeof searchParams.clientId === 'string' ? searchParams.clientId : undefined;
   const leadName = typeof searchParams.leadName === 'string' ? searchParams.leadName : undefined;
+  const caseDetails = typeof searchParams.caseDetails === 'string' ? searchParams.caseDetails : undefined;
 
   return (
     <div>
@@ -17,7 +19,7 @@ export default function DraftsPage({ searchParams }: { searchParams: { [key: str
             <CardTitle className="text-3xl font-bold tracking-tight">Legal Draft Generation Tool</CardTitle>
             <CardDescription>Use AI to generate initial legal drafts. Review and edit before sending.</CardDescription>
         </CardHeader>
-        <DraftForm clientId={clientId} leadName={leadName} />
+        <DraftForm clientId={clientId} leadName={leadName} caseDetails={caseDetails} />
     </div>
   );
 }

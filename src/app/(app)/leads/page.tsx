@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from "react";
@@ -224,7 +225,7 @@ export default function LeadsPage() {
                             </Link>
                         </Button>
                         <Button asChild variant="outline" size="sm">
-                            <Link href={`/drafts?leadName=${encodeURIComponent(lead.name)}`}>
+                           <Link href={`/drafts?leadName=${encodeURIComponent(lead.name)}&caseDetails=${encodeURIComponent(lead.voice_transcript)}`}>
                                 <FileText className="mr-2 h-4 w-4" />
                                 Write Draft
                             </Link>
