@@ -27,11 +27,13 @@ export type Lead = {
   id: string;
   name: string;
   email: string;
-  phone: string;
-  avatarUrl: string;
-  status: 'New' | 'Contacted' | 'Qualified' | 'Disqualified';
+  whatsapp: string;
+  language: string;
+  amount: string;
   createdAt: string;
-}
+  voiceTranscript: string;
+  status: 'New' | 'Contacted' | 'Qualified' | 'Disqualified';
+};
 
 export type Appointment = {
   id: string;

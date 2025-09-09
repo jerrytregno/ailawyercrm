@@ -58,44 +58,8 @@ export const clients: Client[] = [
   },
 ];
 
-export const leads: Lead[] = [
-    {
-        id: 'l1',
-        name: 'Elon Musk',
-        email: 'elon@x.com',
-        phone: '111-222-3333',
-        avatarUrl: 'https://picsum.photos/id/1/100/100',
-        status: 'New',
-        createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-    },
-    {
-        id: 'l2',
-        name: 'Jeff Bezos',
-        email: 'jeff@amazon.com',
-        phone: '444-555-6666',
-        avatarUrl: 'https://picsum.photos/id/2/100/100',
-        status: 'Contacted',
-        createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-    },
-    {
-        id: 'l3',
-        name: 'Bill Gates',
-        email: 'bill@microsoft.com',
-        phone: '777-888-9999',
-        avatarUrl: 'https://picsum.photos/id/3/100/100',
-        status: 'Qualified',
-        createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-    },
-    {
-        id: 'l4',
-        name: 'Mark Zuckerberg',
-        email: 'mark@meta.com',
-        phone: '000-111-2222',
-        avatarUrl: 'https://picsum.photos/id/4/100/100',
-        status: 'Disqualified',
-        createdAt: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString(),
-    }
-]
+export const leads: Lead[] = []
+
 
 export const appointments: Appointment[] = [
   {
