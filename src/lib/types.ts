@@ -23,6 +23,16 @@ export type Client = {
   cases: Case[];
 };
 
+export type Lead = {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  avatarUrl: string;
+  status: 'New' | 'Contacted' | 'Qualified' | 'Disqualified';
+  createdAt: string;
+}
+
 export type Appointment = {
   id: string;
   client: Pick<Client, 'id' | 'name' | 'avatarUrl'>;
