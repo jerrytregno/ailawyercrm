@@ -36,59 +36,62 @@ import { translateText } from "@/ai/flows/translate-text";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 function LeadDetailPopup({ lead, isOpen, onClose }: { lead: Lead | null, isOpen: boolean, onClose: () => void }) {
-    const [translatedText, setTranslatedText] = useState('');
+    const [transcript, setTranscript] = useState('');
+    const [isTranslated, setIsTranslated] = useState(false);
     const [isTranslating, setIsTranslating] = useState(false);
     
     useEffect(() => {
-        // Reset state when the lead changes
-        setTranslatedText('');
-        setIsTranslating(false);
+        if (lead) {
+            setTranscript(lead.voice_transcript || '');
+            setIsTranslated(false);
+        }
     }, [lead]);
 
     if (!lead) return null;
 
     const handleTranslate = async () => {
-        if (!lead.voice_transcript) return;
+        if (!transcript || isTranslated) return;
         setIsTranslating(true);
         try {
-            const result = await translateText({ text: lead.voice_transcript, targetLanguage: 'English' });
-            setTranslatedText(result);
+            const result = await translateText({ text: transcript, targetLanguage: 'English' });
+            setTranscript(result);
+            setIsTranslated(true);
         } catch (error) {
             console.error("Translation failed:", error);
-            setTranslatedText("Sorry, translation failed.");
+            setTranscript("Sorry, translation failed.");
         } finally {
             setIsTranslating(false);
         }
     };
 
+    const handleClose = () => {
+        // Reset state on close
+        setTranscript('');
+        setIsTranslated(false);
+        setIsTranslating(false);
+        onClose();
+    }
+
     return (
-        <Dialog open={isOpen} onOpenChange={onClose}>
+        <Dialog open={isOpen} onOpenChange={handleClose}>
             <DialogContent className="sm:max-w-[625px]">
                 <DialogHeader>
                     <DialogTitle>Voice Transcript for {lead.name}</DialogTitle>
                     <DialogDescription>
                         Original language: {lead.language}
+                        {isTranslated && " (Translated to English)"}
                     </DialogDescription>
                 </DialogHeader>
                 <ScrollArea className="h-48">
-                    <p className="text-sm text-muted-foreground py-4">{lead.voice_transcript}</p>
+                    <p className="text-sm text-muted-foreground py-4">{transcript}</p>
                 </ScrollArea>
-                
-                {translatedText && (
-                    <>
-                        <h3 className="text-md font-semibold mt-4">English Translation</h3>
-                        <ScrollArea className="h-48">
-                            <p className="text-sm py-4">{translatedText}</p>
-                        </ScrollArea>
-                    </>
-                )}
 
                 <DialogFooter>
-                    <Button onClick={handleTranslate} disabled={isTranslating}>
+                    <Button onClick={handleTranslate} disabled={isTranslating || isTranslated}>
                         {isTranslating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Languages className="mr-2 h-4 w-4" />}
                         Translate to English
                     </Button>
-                    <Button variant="outline" onClick={onClose}>Close</Button>
+                    <Button variant="outline" onClick={handleClose}>Close</Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>
