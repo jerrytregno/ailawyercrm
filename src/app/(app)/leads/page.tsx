@@ -2,13 +2,12 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { MoreHorizontal, PlusCircle, PlayCircle } from "lucide-react";
+import { MoreHorizontal, PlusCircle } from "lucide-react";
 import { collection, getDocs, QueryDocumentSnapshot, DocumentData } from "firebase/firestore";
 import { format } from "date-fns";
 
 import { db } from "@/lib/firebase";
 import { type Lead } from "@/lib/types";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -33,12 +32,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { textToSpeech } from "@/ai/flows/text-to-speech";
 
 export default function LeadsPage() {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
-  const [playingAudio, setPlayingAudio] = useState<string | null>(null);
 
   useEffect(() => {
     async function fetchLeads() {
@@ -69,26 +66,6 @@ export default function LeadsPage() {
 
     fetchLeads();
   }, []);
-
-  const playAudio = async (text: string, leadId: string) => {
-    if (playingAudio === leadId) {
-        setPlayingAudio(null);
-        return;
-    }
-    setPlayingAudio(leadId);
-    try {
-        const { media } = await textToSpeech(text);
-        if(media) {
-            const audio = new Audio(media);
-            audio.play();
-            audio.onended = () => setPlayingAudio(null);
-        }
-    } catch (error) {
-        console.error("Error playing audio:", error);
-        setPlayingAudio(null);
-    }
-  }
-
 
   return (
     <Card>
@@ -137,12 +114,7 @@ export default function LeadsPage() {
                     {lead.email}
                     </TableCell>
                     <TableCell>
-                        <div className="flex items-center gap-2">
-                             <Button variant="ghost" size="icon" onClick={() => playAudio(lead.voiceTranscript, lead.id)} disabled={playingAudio === lead.id}>
-                                <PlayCircle className="h-5 w-5" />
-                            </Button>
-                            <span className="truncate max-w-xs">{lead.voiceTranscript}</span>
-                        </div>
+                        <span className="truncate max-w-xs">{lead.voiceTranscript}</span>
                     </TableCell>
                     <TableCell className="hidden md:table-cell">
                     {format(new Date(lead.createdAt), "MMM d, yyyy")}
