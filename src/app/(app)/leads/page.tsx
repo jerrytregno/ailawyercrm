@@ -3,7 +3,8 @@
 import { useState, useEffect } from "react";
 import { collection, getDocs, QueryDocumentSnapshot, DocumentData } from "firebase/firestore";
 import { format } from "date-fns";
-import { Loader2, Languages } from "lucide-react";
+import { Loader2, Languages, Video } from "lucide-react";
+import Link from 'next/link';
 
 import { db } from "@/lib/firebase";
 import { type Lead } from "@/lib/types";
@@ -144,6 +145,23 @@ export default function LeadsPage() {
     setSelectedLead(null);
   };
 
+  const createGoogleCalendarLink = (lead: Lead) => {
+    const now = new Date();
+    const startTime = now.toISOString().replace(/-|:|\.\d+/g, '');
+    const endTime = new Date(now.getTime() + 60 * 60 * 1000).toISOString().replace(/-|:|\.\d+/g, '');
+
+    const details = `Meeting with ${lead.name} (${lead.email}).\n\nLead Details:\nAmount: ${lead.amount}\nLanguage: ${lead.language}`;
+
+    const url = new URL('https://calendar.google.com/calendar/render');
+    url.searchParams.set('action', 'TEMPLATE');
+    url.searchParams.set('text', `Meeting with ${lead.name}`);
+    url.searchParams.set('dates', `${startTime}/${endTime}`);
+    url.searchParams.set('details', details);
+    url.searchParams.set('add', lead.email);
+    url.searchParams.set('location', 'Google Meet');
+    return url.toString();
+  };
+
 
   return (
     <>
@@ -169,16 +187,17 @@ export default function LeadsPage() {
               <TableHead>Amount</TableHead>
               <TableHead>Voice Transcript</TableHead>
               <TableHead className="hidden md:table-cell">Created At</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {loading ? (
                 <TableRow>
-                    <TableCell colSpan={7} className="text-center">Loading leads...</TableCell>
+                    <TableCell colSpan={8} className="text-center">Loading leads...</TableCell>
                 </TableRow>
             ) : leads.length === 0 ? (
                  <TableRow>
-                    <TableCell colSpan={7} className="text-center">No leads found.</TableCell>
+                    <TableCell colSpan={8} className="text-center">No leads found.</TableCell>
                 </TableRow>
             ) : (
                 leads.map((lead) => (
@@ -195,6 +214,14 @@ export default function LeadsPage() {
                     </TableCell>
                     <TableCell className="hidden md:table-cell">
                     {format(new Date(lead.createdAt), "MMM d, yyyy")}
+                    </TableCell>
+                    <TableCell className="text-right">
+                        <Button asChild variant="outline" size="sm">
+                            <Link href={createGoogleCalendarLink(lead)} target="_blank">
+                                <Video className="mr-2 h-4 w-4" />
+                                Schedule
+                            </Link>
+                        </Button>
                     </TableCell>
                 </TableRow>
                 ))
