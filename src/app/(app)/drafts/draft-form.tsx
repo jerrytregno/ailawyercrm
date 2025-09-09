@@ -105,20 +105,22 @@ export function DraftForm({ clientId, leadName }: { clientId?: string, leadName?
     async function fetchLeads() {
       try {
         const querySnapshot = await getDocs(collection(db, "users"));
-        const leadsData: Lead[] = querySnapshot.docs.map((doc: QueryDocumentSnapshot<DocumentData>) => {
-            const data = doc.data();
-            return {
-                id: doc.id,
-                name: data.name || '',
-                email: data.email || '',
-                whatsapp: data.whatsapp || '',
-                language: data.language || '',
-                amount: data.amount || '',
-                createdAt: data.created_at?.toDate ? data.created_at.toDate().toISOString() : new Date(data.created_at).toISOString(),
-                voice_transcript: data.voice_transcript || '',
-                status: 'New'
-            }
-        });
+        const leadsData: Lead[] = querySnapshot.docs
+            .map((doc: QueryDocumentSnapshot<DocumentData>) => {
+                const data = doc.data();
+                return {
+                    id: doc.id,
+                    name: data.name || '',
+                    email: data.email || '',
+                    whatsapp: data.whatsapp || '',
+                    language: data.language || '',
+                    amount: data.amount || '',
+                    createdAt: data.created_at?.toDate ? data.created_at.toDate().toISOString() : new Date(data.created_at).toISOString(),
+                    voice_transcript: data.voice_transcript || '',
+                    status: 'New'
+                } as Lead
+            })
+            .filter(lead => lead.name); // Filter out leads with no name
         setLeads(leadsData);
         if (leadName) {
             const selectedLead = leadsData.find(lead => lead.name === leadName);
