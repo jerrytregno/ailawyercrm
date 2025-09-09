@@ -195,7 +195,7 @@ export function DraftForm({ clientId, leadName }: { clientId?: string, leadName?
                         </FormControl>
                         <SelectContent>
                             {leads.map(lead => (
-                                <SelectItem key={lead.id} value={lead.name}>{lead.name}</SelectItem>
+                                <SelectItem key={lead.id} value={lead.id}>{lead.name}</SelectItem>
                             ))}
                         </SelectContent>
                     </Select>
