@@ -54,11 +54,15 @@ function LeadDetailPopup({ lead, isOpen, onClose }: { lead: Lead | null, isOpen:
         setIsTranslating(true);
         try {
             const result = await translateText({ text: transcript, targetLanguage: 'English' });
-            setTranscript(result);
-            setIsTranslated(true);
+            if (result) {
+              setTranscript(result);
+              setIsTranslated(true);
+            } else {
+              setTranscript("Sorry, translation failed. Please try again.");
+            }
         } catch (error) {
             console.error("Translation failed:", error);
-            setTranscript("Sorry, translation failed.");
+            setTranscript("Sorry, an error occurred during translation.");
         } finally {
             setIsTranslating(false);
         }
