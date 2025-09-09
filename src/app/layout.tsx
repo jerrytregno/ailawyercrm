@@ -3,8 +3,8 @@ import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 
 export const metadata: Metadata = {
-  title: 'LawLink',
-  description: 'Your Modern CRM for Legal Professionals',
+  title: 'Zolvit AI',
+  description: 'AI-Powered Legal CRM',
 };
 
 export default function RootLayout({
