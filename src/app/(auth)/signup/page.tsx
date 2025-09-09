@@ -47,8 +47,8 @@ export default function SignupPage() {
             <Label htmlFor="password">Password</Label>
             <Input id="password" type="password" />
           </div>
-          <Button type="submit" className="w-full">
-            Create an account
+          <Button type="submit" className="w-full" asChild>
+            <Link href="/set-availability">Create an account</Link>
           </Button>
           <Button variant="outline" className="w-full">
             Sign up with Google
