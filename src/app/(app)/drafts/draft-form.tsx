@@ -1,0 +1,226 @@
+'use client';
+
+import { useFormState, useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { useEffect, useState } from 'react';
+import { Copy, Download, Send, Bot, User, FileText, Loader2, Sparkles } from 'lucide-react';
+
+import { createDraft } from './actions';
+import { Button } from '@/components/ui/button';
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { clients } from '@/lib/data';
+import { useToast } from '@/hooks/use-toast';
+import { Separator } from '@/components/ui/separator';
+
+const DraftSchema = z.object({
+  clientName: z.string().min(1, 'Client name is required.'),
+  caseDetails: z.string().min(10, 'Case details must be at least 10 characters.'),
+  documentType: z.string().min(1, 'Document type is required.'),
+  relevantJurisdiction: z.string().min(1, 'Jurisdiction is required.'),
+});
+
+type DraftFormValues = z.infer<typeof DraftSchema>;
+
+function SubmitButton() {
+    // Note: useFormStatus is not available with useFormState in the same component.
+    // A simple loading state is used instead. This could be improved if needed.
+    const [pending, setPending] = useState(false);
+
+    useEffect(() => {
+        const form = document.querySelector('form');
+        const handleSubmit = () => setPending(true);
+        const handleReset = () => setPending(false);
+
+        form?.addEventListener('submit', handleSubmit);
+        // This is a simplification; a more robust solution would listen for form submission result
+        // For now, we'll just reset it after a timeout.
+        const timer = setTimeout(() => setPending(false), 5000);
+
+        return () => {
+            form?.removeEventListener('submit', handleSubmit);
+            clearTimeout(timer);
+        };
+    }, []);
+
+    return (
+        <Button type="submit" disabled={pending} className="w-full">
+            {pending ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+                <Sparkles className="mr-2 h-4 w-4" />
+            )}
+            Generate Draft
+        </Button>
+    );
+}
+
+
+export function DraftForm({ clientId }: { clientId?: string }) {
+  const { toast } = useToast();
+  const [formState, formAction] = useFormState(createDraft, {
+    message: '',
+    draft: null,
+    error: false,
+  });
+
+  const form = useForm<DraftFormValues>({
+    resolver: zodResolver(DraftSchema),
+    defaultValues: {
+      clientName: clients.find(c => c.id === clientId)?.name || '',
+      caseDetails: '',
+      documentType: '',
+      relevantJurisdiction: '',
+    },
+  });
+
+  useEffect(() => {
+    if (formState.message) {
+      if (formState.error) {
+        toast({
+          variant: 'destructive',
+          title: 'Error',
+          description: formState.message,
+        });
+      } else {
+         toast({
+          title: 'Success',
+          description: formState.message,
+        });
+      }
+    }
+  }, [formState, toast]);
+
+  const handleCopy = () => {
+    if(formState.draft) {
+        navigator.clipboard.writeText(formState.draft);
+        toast({ title: "Copied to clipboard!" });
+    }
+  }
+
+  return (
+    <div className="grid gap-8 md:grid-cols-2">
+      <Card>
+        <CardHeader>
+          <CardTitle>Case Information</CardTitle>
+          <CardDescription>Fill in the details to generate a legal document.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Form {...form}>
+            <form action={formAction} className="space-y-6">
+              <FormField
+                control={form.control}
+                name="clientName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Client Name</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Select a client" />
+                            </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                            {clients.map(client => (
+                                <SelectItem key={client.id} value={client.name}>{client.name}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="documentType"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Document Type</FormLabel>
+                    <Input placeholder="e.g., Non-Disclosure Agreement, Employment Contract" {...field} />
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="relevantJurisdiction"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Relevant Jurisdiction</FormLabel>
+                    <Input placeholder="e.g., State of California" {...field} />
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="caseDetails"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Case Details</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder="Provide all relevant facts, terms, and conditions for the document..."
+                        className="min-h-[150px]"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <SubmitButton />
+            </form>
+          </Form>
+        </CardContent>
+      </Card>
+      
+      <Card>
+        <CardHeader>
+          <CardTitle>Generated Draft</CardTitle>
+          <CardDescription>Review, edit, and share the AI-generated document.</CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-col h-[calc(100%-4rem)]">
+          {formState.draft ? (
+            <>
+              <Textarea
+                readOnly
+                className="flex-grow bg-muted/50 text-sm font-mono h-[400px]"
+                defaultValue={formState.draft}
+              />
+              <div className="flex items-center gap-2 mt-4">
+                <Button onClick={handleCopy} variant="outline" size="sm"><Copy className="mr-2 h-4 w-4"/>Copy</Button>
+                <Button variant="outline" size="sm"><Download className="mr-2 h-4 w-4"/>Download</Button>
+                <Button size="sm"><Send className="mr-2 h-4 w-4"/>Send to Client</Button>
+              </div>
+            </>
+          ) : (
+             <div className="flex flex-col items-center justify-center text-center p-8 border-2 border-dashed rounded-lg h-full bg-muted/20">
+                <Bot className="h-12 w-12 text-muted-foreground mb-4" />
+                <h3 className="text-lg font-semibold">Your draft will appear here</h3>
+                <p className="text-sm text-muted-foreground">Fill out the form to generate a legal document.</p>
+             </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
