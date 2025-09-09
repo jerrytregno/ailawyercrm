@@ -88,7 +88,6 @@ export default function LeadsPage() {
           <TableHeader>
             <TableRow>
               <TableHead>Name</TableHead>
-              <TableHead>Voice Transcript</TableHead>
               <TableHead>WhatsApp</TableHead>
               <TableHead>Language</TableHead>
               <TableHead>Amount</TableHead>
@@ -101,19 +100,16 @@ export default function LeadsPage() {
           <TableBody>
             {loading ? (
                 <TableRow>
-                    <TableCell colSpan={7} className="text-center">Loading leads...</TableCell>
+                    <TableCell colSpan={6} className="text-center">Loading leads...</TableCell>
                 </TableRow>
             ) : leads.length === 0 ? (
                  <TableRow>
-                    <TableCell colSpan={7} className="text-center">No leads found.</TableCell>
+                    <TableCell colSpan={6} className="text-center">No leads found.</TableCell>
                 </TableRow>
             ) : (
                 leads.map((lead) => (
                 <TableRow key={lead.id}>
                     <TableCell className="font-medium">{lead.name}</TableCell>
-                    <TableCell>
-                        <span className="truncate max-w-xs">{lead.voiceTranscript}</span>
-                    </TableCell>
                     <TableCell>{lead.whatsapp}</TableCell>
                     <TableCell>{lead.language}</TableCell>
                     <TableCell>{lead.amount}</TableCell>
