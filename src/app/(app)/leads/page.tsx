@@ -50,8 +50,8 @@ export default function LeadsPage() {
                 whatsapp: data.whatsapp || '',
                 language: data.language || '',
                 amount: data.amount || '',
-                createdAt: data.createdAt?.toDate ? data.createdAt.toDate().toISOString() : new Date().toISOString(),
-                voiceTranscript: data.voice || '',
+                createdAt: data.created_at?.toDate ? data.created_at.toDate().toISOString() : new Date(data.created_at).toISOString(),
+                voice_transcript: data.voice_transcript || '',
                 status: 'New'
             }
         });
@@ -88,9 +88,11 @@ export default function LeadsPage() {
           <TableHeader>
             <TableRow>
               <TableHead>Name</TableHead>
+              <TableHead>Email</TableHead>
               <TableHead>WhatsApp</TableHead>
               <TableHead>Language</TableHead>
               <TableHead>Amount</TableHead>
+              <TableHead>Voice Transcript</TableHead>
               <TableHead className="hidden md:table-cell">Created At</TableHead>
               <TableHead>
                 <span className="sr-only">Actions</span>
@@ -100,19 +102,21 @@ export default function LeadsPage() {
           <TableBody>
             {loading ? (
                 <TableRow>
-                    <TableCell colSpan={6} className="text-center">Loading leads...</TableCell>
+                    <TableCell colSpan={8} className="text-center">Loading leads...</TableCell>
                 </TableRow>
             ) : leads.length === 0 ? (
                  <TableRow>
-                    <TableCell colSpan={6} className="text-center">No leads found.</TableCell>
+                    <TableCell colSpan={8} className="text-center">No leads found.</TableCell>
                 </TableRow>
             ) : (
                 leads.map((lead) => (
                 <TableRow key={lead.id}>
                     <TableCell className="font-medium">{lead.name}</TableCell>
+                    <TableCell>{lead.email}</TableCell>
                     <TableCell>{lead.whatsapp}</TableCell>
                     <TableCell>{lead.language}</TableCell>
                     <TableCell>{lead.amount}</TableCell>
+                    <TableCell className="max-w-xs truncate">{lead.voice_transcript}</TableCell>
                     <TableCell className="hidden md:table-cell">
                     {format(new Date(lead.createdAt), "MMM d, yyyy")}
                     </TableCell>

@@ -31,7 +31,7 @@ export type Lead = {
   language: string;
   amount: string;
   createdAt: string;
-  voiceTranscript: string;
+  voice_transcript: string;
   status: 'New' | 'Contacted' | 'Qualified' | 'Disqualified';
 };
 
