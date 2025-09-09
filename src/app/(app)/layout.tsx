@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -28,7 +29,7 @@ import {
   SidebarTrigger,
 } from '@/components/ui/sidebar';
 import { Logo } from '@/components/logo';
-import { LayoutDashboard, Users, FileText, Settings, Search, Bell, GitBranch } from 'lucide-react';
+import { LayoutDashboard, Users, FileText, Settings, Search, Bell, GitBranch, CalendarDays } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 
 const navItems = [
@@ -36,6 +37,7 @@ const navItems = [
   { href: '/leads', icon: GitBranch, label: 'Leads' },
   { href: '/clients', icon: Users, label: 'Clients' },
   { href: '/drafts', icon: FileText, label: 'Legal Drafts' },
+  { href: '/set-availability', icon: CalendarDays, label: 'Availability' },
 ];
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
