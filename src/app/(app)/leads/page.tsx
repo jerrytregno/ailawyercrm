@@ -89,7 +89,7 @@ export default function LeadsPage() {
           <TableHeader>
             <TableRow>
               <TableHead>Name</TableHead>
-              <TableHead>Summary</TableHead>
+              <TableHead>Voice Transcript</TableHead>
               <TableHead>WhatsApp</TableHead>
               <TableHead>Language</TableHead>
               <TableHead>Amount</TableHead>
