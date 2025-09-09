@@ -58,9 +58,6 @@ export const clients: Client[] = [
   },
 ];
 
-export const leads: Lead[] = []
-
-
 export const appointments: Appointment[] = [
   {
     id: 'apt1',
