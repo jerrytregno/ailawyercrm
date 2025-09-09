@@ -1,3 +1,5 @@
+import { z } from 'zod';
+
 export type Communication = {
   id: string;
   type: 'Appointment' | 'Draft' | 'Message';
@@ -50,3 +52,9 @@ export type LegalDraft = {
   createdAt: string;
   status: 'Draft' | 'Sent' | 'Finalized';
 };
+
+export const TranslateTextInputSchema = z.object({
+  text: z.string().describe('The text to be translated.'),
+  targetLanguage: z.string().describe('The language to translate the text into (e.g., "English", "Spanish").'),
+});
+export type TranslateTextInput = z.infer<typeof TranslateTextInputSchema>;
