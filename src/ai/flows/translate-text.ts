@@ -7,22 +7,9 @@
  */
 
 import { ai } from '@/ai/genkit';
-import { z } from 'genkit';
+import { z } from 'zod';
 import { TranslateTextInput, TranslateTextInputSchema } from '@/lib/types';
 
-
-const translatePrompt = ai.definePrompt({
-  name: 'translatePrompt',
-  input: { schema: TranslateTextInputSchema },
-  output: { schema: z.string().describe('The translated text.') },
-  prompt: `You are a translation expert. Translate the following text to {{{targetLanguage}}}.
-  
-  Only return the translated text, with no additional commentary or explanation.
-  
-  Text to translate:
-  "{{{text}}}"
-  `,
-});
 
 const translateTextFlow = ai.defineFlow(
   {
@@ -32,12 +19,15 @@ const translateTextFlow = ai.defineFlow(
   },
   async (input) => {
     try {
-        const { output } = await translatePrompt(input);
-        return output || '';
+      const { text } = await ai.generate({
+        prompt: `Translate the following text to ${input.targetLanguage}. Only return the translated text, with no additional commentary or explanation.\n\nText to translate:\n"${input.text}"`,
+        model: 'googleai/gemini-2.5-flash',
+      });
+      return text;
     } catch (error) {
-        console.error('Translation prompt failed:', error);
-        // If the prompt fails for any reason, return an empty string
-        // to avoid crashing the client application.
+        console.error('Translation failed:', error);
+        // Return an empty string on failure to prevent crashes.
+        // The frontend will handle displaying an error message.
         return '';
     }
   }
