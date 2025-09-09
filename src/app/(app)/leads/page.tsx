@@ -89,8 +89,10 @@ export default function LeadsPage() {
           <TableHeader>
             <TableRow>
               <TableHead>Name</TableHead>
-              <TableHead>Email</TableHead>
               <TableHead>Summary</TableHead>
+              <TableHead>WhatsApp</TableHead>
+              <TableHead>Language</TableHead>
+              <TableHead>Amount</TableHead>
               <TableHead className="hidden md:table-cell">Created At</TableHead>
               <TableHead>
                 <span className="sr-only">Actions</span>
@@ -100,22 +102,22 @@ export default function LeadsPage() {
           <TableBody>
             {loading ? (
                 <TableRow>
-                    <TableCell colSpan={5} className="text-center">Loading leads...</TableCell>
+                    <TableCell colSpan={7} className="text-center">Loading leads...</TableCell>
                 </TableRow>
             ) : leads.length === 0 ? (
                  <TableRow>
-                    <TableCell colSpan={5} className="text-center">No leads found.</TableCell>
+                    <TableCell colSpan={7} className="text-center">No leads found.</TableCell>
                 </TableRow>
             ) : (
                 leads.map((lead) => (
                 <TableRow key={lead.id}>
                     <TableCell className="font-medium">{lead.name}</TableCell>
-                    <TableCell className="hidden md:table-cell">
-                    {lead.email}
-                    </TableCell>
                     <TableCell>
                         <span className="truncate max-w-xs">{lead.voiceTranscript}</span>
                     </TableCell>
+                    <TableCell>{lead.whatsapp}</TableCell>
+                    <TableCell>{lead.language}</TableCell>
+                    <TableCell>{lead.amount}</TableCell>
                     <TableCell className="hidden md:table-cell">
                     {format(new Date(lead.createdAt), "MMM d, yyyy")}
                     </TableCell>
