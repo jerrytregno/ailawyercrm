@@ -50,10 +50,9 @@ export default function LeadsPage() {
                 whatsapp: data.whatsapp || '',
                 language: data.language || '',
                 amount: data.amount || '',
-                // Ensure createdAt is a string. Firestore Timestamps need to be converted.
                 createdAt: data.createdAt?.toDate ? data.createdAt.toDate().toISOString() : new Date().toISOString(),
-                voiceTranscript: data.voiceTranscript || data.voice || '',
-                status: 'New' // Default status
+                voiceTranscript: data.voice || '',
+                status: 'New'
             }
         });
         setLeads(leadsData);
