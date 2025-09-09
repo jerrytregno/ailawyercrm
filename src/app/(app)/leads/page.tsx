@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { MoreHorizontal, PlusCircle, PlayCircle } from "lucide-react";
+import { MoreHorizontal, PlusCircle } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -27,11 +27,10 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { format } from "date-fns";
-import { getLeads } from "@/services/lead-service";
-import { PlayAudio } from './play-audio';
+import { leads } from "@/lib/data";
+
 
 export default async function LeadsPage() {
-  const leads = await getLeads();
 
   return (
     <Card>
@@ -72,7 +71,6 @@ export default async function LeadsPage() {
                 </TableCell>
                 <TableCell>
                     <div className="flex items-center gap-2">
-                        <PlayAudio text={lead.voiceTranscript} />
                         <span className="truncate max-w-xs">{lead.voiceTranscript}</span>
                     </div>
                 </TableCell>
