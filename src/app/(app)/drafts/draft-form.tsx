@@ -1,10 +1,10 @@
+
 'use client';
 
-import { useFormState } from 'react-dom';
+import { useActionState, useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useEffect, useState } from 'react';
 import { Copy, Download, Send, Bot, User, FileText, Loader2, Sparkles } from 'lucide-react';
 
 import { createDraft } from './actions';
@@ -77,7 +77,7 @@ function SubmitButton() {
 
 export function DraftForm({ clientId }: { clientId?: string }) {
   const { toast } = useToast();
-  const [formState, formAction] = useFormState(createDraft, {
+  const [formState, formAction] = useActionState(createDraft, {
     message: '',
     draft: null,
     error: false,
