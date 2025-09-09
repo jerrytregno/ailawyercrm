@@ -2,12 +2,15 @@
 'use client';
 
 import { useActionState, useEffect, useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Copy, Download, Send, Bot, User, FileText, Loader2, Sparkles } from 'lucide-react';
+import { Copy, Download, Send, Bot, Loader2, Sparkles } from 'lucide-react';
+import { collection, getDocs, QueryDocumentSnapshot, DocumentData } from "firebase/firestore";
 
 import { createDraft } from './actions';
+import { db } from "@/lib/firebase";
+import { type Lead } from "@/lib/types";
 import { Button } from '@/components/ui/button';
 import {
   Form,
@@ -28,9 +31,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { clients } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
-import { Separator } from '@/components/ui/separator';
 
 const DraftSchema = z.object({
   clientName: z.string().min(1, 'Client name is required.'),
@@ -42,18 +43,18 @@ const DraftSchema = z.object({
 type DraftFormValues = z.infer<typeof DraftSchema>;
 
 function SubmitButton() {
-    // Note: useFormStatus is not available with useFormState in the same component.
-    // A simple loading state is used instead. This could be improved if needed.
+    // Note: A simple loading state is used here as a workaround for useFormStatus
+    // limitations with useActionState in the same component.
     const [pending, setPending] = useState(false);
 
     useEffect(() => {
         const form = document.querySelector('form');
         const handleSubmit = () => setPending(true);
-        const handleReset = () => setPending(false);
-
+        
         form?.addEventListener('submit', handleSubmit);
-        // This is a simplification; a more robust solution would listen for form submission result
-        // For now, we'll just reset it after a timeout.
+        
+        // A more robust solution would listen for the form submission result.
+        // For now, reset after a timeout as a simple UX improvement.
         const timer = setTimeout(() => setPending(false), 5000);
 
         return () => {
@@ -74,39 +75,90 @@ function SubmitButton() {
     );
 }
 
-
-export function DraftForm({ clientId }: { clientId?: string }) {
+export function DraftForm({ clientId, leadName }: { clientId?: string, leadName?: string }) {
   const { toast } = useToast();
   const [formState, formAction] = useActionState(createDraft, {
     message: '',
     draft: null,
     error: false,
   });
+  
+  const [leads, setLeads] = useState<Lead[]>([]);
+  const [loadingLeads, setLoadingLeads] = useState(true);
 
   const form = useForm<DraftFormValues>({
     resolver: zodResolver(DraftSchema),
     defaultValues: {
-      clientName: clients.find(c => c.id === clientId)?.name || '',
+      clientName: leadName || '',
       caseDetails: '',
       documentType: '',
       relevantJurisdiction: '',
     },
   });
 
+  const selectedClientName = useWatch({
+    control: form.control,
+    name: 'clientName',
+  });
+
+  useEffect(() => {
+    async function fetchLeads() {
+      try {
+        const querySnapshot = await getDocs(collection(db, "users"));
+        const leadsData: Lead[] = querySnapshot.docs.map((doc: QueryDocumentSnapshot<DocumentData>) => {
+            const data = doc.data();
+            return {
+                id: doc.id,
+                name: data.name || '',
+                email: data.email || '',
+                whatsapp: data.whatsapp || '',
+                language: data.language || '',
+                amount: data.amount || '',
+                createdAt: data.created_at?.toDate ? data.created_at.toDate().toISOString() : new Date(data.created_at).toISOString(),
+                voice_transcript: data.voice_transcript || '',
+                status: 'New'
+            }
+        });
+        setLeads(leadsData);
+        if (leadName) {
+            const selectedLead = leadsData.find(lead => lead.name === leadName);
+            if (selectedLead && selectedLead.voice_transcript) {
+                form.setValue('caseDetails', selectedLead.voice_transcript);
+            }
+        }
+      } catch (error) {
+        console.error("Error fetching leads:", error);
+        toast({
+            variant: 'destructive',
+            title: 'Error',
+            description: 'Failed to load leads data.',
+        });
+      } finally {
+        setLoadingLeads(false);
+      }
+    }
+    fetchLeads();
+  }, [leadName, form, toast]);
+
+  useEffect(() => {
+    if(selectedClientName) {
+        const selectedLead = leads.find(lead => lead.name === selectedClientName);
+        if (selectedLead && selectedLead.voice_transcript) {
+            form.setValue('caseDetails', selectedLead.voice_transcript);
+        } else {
+            form.setValue('caseDetails', '');
+        }
+    }
+  }, [selectedClientName, leads, form]);
+
+
   useEffect(() => {
     if (formState.message) {
-      if (formState.error) {
-        toast({
-          variant: 'destructive',
-          title: 'Error',
-          description: formState.message,
-        });
-      } else {
-         toast({
-          title: 'Success',
-          description: formState.message,
-        });
-      }
+      toast({
+        variant: formState.error ? 'destructive' : 'default',
+        title: formState.error ? 'Error' : 'Success',
+        description: formState.message,
+      });
     }
   }, [formState, toast]);
 
@@ -135,13 +187,13 @@ export function DraftForm({ clientId }: { clientId?: string }) {
                     <FormLabel>Client Name</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl>
-                            <SelectTrigger>
-                                <SelectValue placeholder="Select a client" />
+                            <SelectTrigger disabled={loadingLeads}>
+                                <SelectValue placeholder={loadingLeads ? "Loading leads..." : "Select a client"} />
                             </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                            {clients.map(client => (
-                                <SelectItem key={client.id} value={client.name}>{client.name}</SelectItem>
+                            {leads.map(lead => (
+                                <SelectItem key={lead.id} value={lead.name}>{lead.name}</SelectItem>
                             ))}
                         </SelectContent>
                     </Select>

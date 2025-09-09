@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { collection, getDocs, QueryDocumentSnapshot, DocumentData } from "firebase/firestore";
 import { format } from "date-fns";
-import { Loader2, Languages, Video } from "lucide-react";
+import { Loader2, Languages, Video, FileText } from "lucide-react";
 import Link from 'next/link';
 
 import { db } from "@/lib/firebase";
@@ -52,6 +52,7 @@ function LeadDetailPopup({ lead, isOpen, onClose }: { lead: Lead | null, isOpen:
 
     const handleTranslate = async () => {
         if (!transcript || isTranslated) return;
+        const originalTranscript = transcript;
         setIsTranslating(true);
         try {
             const result = await translateText({ text: transcript, targetLanguage: 'English' });
@@ -215,11 +216,17 @@ export default function LeadsPage() {
                     <TableCell className="hidden md:table-cell">
                     {format(new Date(lead.createdAt), "MMM d, yyyy")}
                     </TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="text-right flex justify-end gap-2">
                         <Button asChild variant="outline" size="sm">
                             <Link href={createGoogleCalendarLink(lead)} target="_blank">
                                 <Video className="mr-2 h-4 w-4" />
                                 Schedule
+                            </Link>
+                        </Button>
+                        <Button asChild variant="outline" size="sm">
+                            <Link href={`/drafts?leadName=${encodeURIComponent(lead.name)}`}>
+                                <FileText className="mr-2 h-4 w-4" />
+                                Write Draft
                             </Link>
                         </Button>
                     </TableCell>
