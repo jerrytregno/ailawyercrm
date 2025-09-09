@@ -1,10 +1,9 @@
 'use client';
 
 import { useState, useEffect } from "react";
-import Link from "next/link";
-import { MoreHorizontal, PlusCircle } from "lucide-react";
 import { collection, getDocs, QueryDocumentSnapshot, DocumentData } from "firebase/firestore";
 import { format } from "date-fns";
+import { Loader2, Languages } from "lucide-react";
 
 import { db } from "@/lib/firebase";
 import { type Lead } from "@/lib/types";
@@ -18,13 +17,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
   Table,
   TableBody,
   TableCell,
@@ -32,10 +24,81 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogDescription,
+    DialogFooter,
+} from "@/components/ui/dialog";
+import { translateText } from "@/ai/flows/translate-text";
+import { ScrollArea } from "@/components/ui/scroll-area";
+
+function LeadDetailPopup({ lead, isOpen, onClose }: { lead: Lead | null, isOpen: boolean, onClose: () => void }) {
+    const [translatedText, setTranslatedText] = useState('');
+    const [isTranslating, setIsTranslating] = useState(false);
+    
+    useEffect(() => {
+        // Reset state when the lead changes
+        setTranslatedText('');
+        setIsTranslating(false);
+    }, [lead]);
+
+    if (!lead) return null;
+
+    const handleTranslate = async () => {
+        if (!lead.voice_transcript) return;
+        setIsTranslating(true);
+        try {
+            const result = await translateText({ text: lead.voice_transcript, targetLanguage: 'English' });
+            setTranslatedText(result);
+        } catch (error) {
+            console.error("Translation failed:", error);
+            setTranslatedText("Sorry, translation failed.");
+        } finally {
+            setIsTranslating(false);
+        }
+    };
+
+    return (
+        <Dialog open={isOpen} onOpenChange={onClose}>
+            <DialogContent className="sm:max-w-[625px]">
+                <DialogHeader>
+                    <DialogTitle>Voice Transcript for {lead.name}</DialogTitle>
+                    <DialogDescription>
+                        Original language: {lead.language}
+                    </DialogDescription>
+                </DialogHeader>
+                <ScrollArea className="h-48">
+                    <p className="text-sm text-muted-foreground py-4">{lead.voice_transcript}</p>
+                </ScrollArea>
+                
+                {translatedText && (
+                    <>
+                        <h3 className="text-md font-semibold mt-4">English Translation</h3>
+                        <ScrollArea className="h-48">
+                            <p className="text-sm py-4">{translatedText}</p>
+                        </ScrollArea>
+                    </>
+                )}
+
+                <DialogFooter>
+                    <Button onClick={handleTranslate} disabled={isTranslating}>
+                        {isTranslating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Languages className="mr-2 h-4 w-4" />}
+                        Translate to English
+                    </Button>
+                    <Button variant="outline" onClick={onClose}>Close</Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    )
+}
 
 export default function LeadsPage() {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
 
   useEffect(() => {
     async function fetchLeads() {
@@ -65,8 +128,18 @@ export default function LeadsPage() {
 
     fetchLeads();
   }, []);
+  
+  const handleTranscriptClick = (lead: Lead) => {
+    setSelectedLead(lead);
+  };
+
+  const handleClosePopup = () => {
+    setSelectedLead(null);
+  };
+
 
   return (
+    <>
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between">
@@ -76,11 +149,6 @@ export default function LeadsPage() {
               Manage your leads and convert them to clients.
             </CardDescription>
           </div>
-          <Button asChild>
-            <Link href="#">
-              <PlusCircle className="h-4 w-4 mr-2" /> Add Lead
-            </Link>
-          </Button>
         </div>
       </CardHeader>
       <CardContent>
@@ -94,19 +162,16 @@ export default function LeadsPage() {
               <TableHead>Amount</TableHead>
               <TableHead>Voice Transcript</TableHead>
               <TableHead className="hidden md:table-cell">Created At</TableHead>
-              <TableHead>
-                <span className="sr-only">Actions</span>
-              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {loading ? (
                 <TableRow>
-                    <TableCell colSpan={8} className="text-center">Loading leads...</TableCell>
+                    <TableCell colSpan={7} className="text-center">Loading leads...</TableCell>
                 </TableRow>
             ) : leads.length === 0 ? (
                  <TableRow>
-                    <TableCell colSpan={8} className="text-center">No leads found.</TableCell>
+                    <TableCell colSpan={7} className="text-center">No leads found.</TableCell>
                 </TableRow>
             ) : (
                 leads.map((lead) => (
@@ -116,25 +181,13 @@ export default function LeadsPage() {
                     <TableCell>{lead.whatsapp}</TableCell>
                     <TableCell>{lead.language}</TableCell>
                     <TableCell>{lead.amount}</TableCell>
-                    <TableCell className="max-w-xs truncate">{lead.voice_transcript}</TableCell>
+                    <TableCell className="max-w-xs truncate">
+                      <button onClick={() => handleTranscriptClick(lead)} className="hover:underline text-left">
+                        {lead.voice_transcript}
+                      </button>
+                    </TableCell>
                     <TableCell className="hidden md:table-cell">
                     {format(new Date(lead.createdAt), "MMM d, yyyy")}
-                    </TableCell>
-                    <TableCell>
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                        <Button aria-haspopup="true" size="icon" variant="ghost">
-                            <MoreHorizontal className="h-4 w-4" />
-                            <span className="sr-only">Toggle menu</span>
-                        </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                        <DropdownMenuItem>Convert to Client</DropdownMenuItem>
-                        <DropdownMenuItem>Edit</DropdownMenuItem>
-                        <DropdownMenuItem>Delete</DropdownMenuItem>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
                     </TableCell>
                 </TableRow>
                 ))
@@ -149,5 +202,7 @@ export default function LeadsPage() {
         </div>
       </CardFooter>
     </Card>
+    <LeadDetailPopup lead={selectedLead} isOpen={!!selectedLead} onClose={handleClosePopup} />
+    </>
   );
 }
