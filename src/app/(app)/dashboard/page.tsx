@@ -1,14 +1,21 @@
+
+'use client';
+
+import { useState, useEffect } from 'react';
 import Link from "next/link";
 import {
   Activity,
   ArrowUpRight,
   Calendar,
-  FileText,
   Users,
-  DollarSign
+  DollarSign,
+  Gavel
 } from "lucide-react";
-import { format, formatDistanceToNow } from "date-fns";
+import { format } from "date-fns";
+import { collection, getDocs, QueryDocumentSnapshot, DocumentData } from "firebase/firestore";
 
+import { db } from "@/lib/firebase";
+import { type Lead, type Lawyer } from "@/lib/types";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -28,11 +35,56 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-import { appointments, legalDrafts, clients } from "@/lib/data";
+import { appointments, clients, lawyers } from "@/lib/data";
+
+type AllocatedLead = Lead & { allocatedTo: Lawyer | null };
+
+// Simple round-robin allocation
+function allocateLeads(leads: Lead[], lawyers: Lawyer[]): AllocatedLead[] {
+  if (lawyers.length === 0) {
+    return leads.map(lead => ({ ...lead, allocatedTo: null }));
+  }
+  return leads.map((lead, index) => ({
+    ...lead,
+    allocatedTo: lawyers[index % lawyers.length],
+  }));
+}
 
 export default function DashboardPage() {
+  const [leads, setLeads] = useState<Lead[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchLeads() {
+      try {
+        const querySnapshot = await getDocs(collection(db, "users"));
+        const leadsData: Lead[] = querySnapshot.docs.map((doc: QueryDocumentSnapshot<DocumentData>) => {
+            const data = doc.data();
+            return {
+                id: doc.id,
+                name: data.name || '',
+                email: data.email || '',
+                whatsapp: data.whatsapp || '',
+                language: data.language || '',
+                amount: data.amount || '',
+                createdAt: data.created_at?.toDate ? data.created_at.toDate().toISOString() : new Date(data.created_at).toISOString(),
+                voice_transcript: data.voice_transcript || '',
+                status: 'New'
+            }
+        });
+        setLeads(leadsData);
+      } catch (error) {
+        console.error("Error fetching leads:", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchLeads();
+  }, []);
+
   const upcomingAppointments = appointments.filter(a => a.status === 'Upcoming').slice(0, 3);
-  const recentDrafts = legalDrafts.slice(0, 5);
+  const allocatedLeads = allocateLeads(leads, lawyers);
 
   return (
     <div className="flex flex-col gap-6">
@@ -57,7 +109,7 @@ export default function DashboardPage() {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">+{clients.length}</div>
+            <div className="text-2xl font-bold">+{leads.length}</div>
             <p className="text-xs text-muted-foreground">+5 since last month</p>
           </CardContent>
         </Card>
@@ -88,42 +140,62 @@ export default function DashboardPage() {
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7">
         <Card className="lg:col-span-4">
           <CardHeader>
-            <CardTitle>Recent Leads</CardTitle>
-            <CardDescription>
-              A list of recent leads from your database.
-            </CardDescription>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle>Lead Allocation</CardTitle>
+                <CardDescription>
+                  New leads assigned to available lawyers.
+                </CardDescription>
+              </div>
+              <Button asChild size="sm">
+                <Link href="/leads">
+                  Manage Leads
+                </Link>
+              </Button>
+            </div>
           </CardHeader>
           <CardContent>
              <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Client</TableHead>
-                  <TableHead className="hidden sm:table-cell">Status</TableHead>
-                  <TableHead className="text-right">Active Cases</TableHead>
+                  <TableHead>Lead</TableHead>
+                  <TableHead>Date</TableHead>
+                  <TableHead className="text-right">Assigned Lawyer</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {clients.slice(0,5).map((client) => (
-                  <TableRow key={client.id}>
-                    <TableCell>
-                      <div className="flex items-center gap-3">
-                        <Avatar className="hidden h-9 w-9 sm:flex">
-                          <AvatarImage src={client.avatarUrl} alt="Avatar" data-ai-hint="person photo" />
-                          <AvatarFallback>{client.name.charAt(0)}</AvatarFallback>
-                        </Avatar>
-                        <div className="font-medium">{client.name}</div>
-                      </div>
-                    </TableCell>
-                    <TableCell className="hidden sm:table-cell">
-                      <Badge variant={client.cases.some(c => c.status === 'Open') ? 'outline' : 'secondary'}>
-                        {client.cases.some(c => c.status === 'Open') ? 'Active' : 'Inactive'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                        {client.cases.filter(c => c.status === 'Open').length}
-                    </TableCell>
+                {loading ? (
+                  <TableRow>
+                    <TableCell colSpan={3} className="text-center h-24">Loading leads...</TableCell>
                   </TableRow>
-                ))}
+                ) : allocatedLeads.length > 0 ? (
+                  allocatedLeads.map((lead) => (
+                    <TableRow key={lead.id}>
+                      <TableCell>
+                        <div className="font-medium">{lead.name}</div>
+                        <div className="text-sm text-muted-foreground">{lead.email}</div>
+                      </TableCell>
+                      <TableCell>{format(new Date(lead.createdAt), "MMM d, yyyy")}</TableCell>
+                      <TableCell className="text-right">
+                        {lead.allocatedTo ? (
+                          <div className="flex items-center justify-end gap-2">
+                            <span>{lead.allocatedTo.name}</span>
+                            <Avatar className="h-8 w-8">
+                              <AvatarImage src={lead.allocatedTo.avatarUrl} alt={lead.allocatedTo.name} data-ai-hint="person portrait" />
+                              <AvatarFallback>{lead.allocatedTo.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+                            </Avatar>
+                          </div>
+                        ) : (
+                          <span className="text-muted-foreground">Unassigned</span>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={3} className="text-center h-24">No new leads found.</TableCell>
+                  </TableRow>
+                )}
               </TableBody>
             </Table>
           </CardContent>

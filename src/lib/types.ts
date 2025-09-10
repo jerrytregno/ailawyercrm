@@ -58,3 +58,11 @@ export const TranslateTextInputSchema = z.object({
   targetLanguage: z.string().describe('The language to translate the text into (e.g., "English", "Spanish").'),
 });
 export type TranslateTextInput = z.infer<typeof TranslateTextInputSchema>;
+
+export type Lawyer = {
+  id: string;
+  name: string;
+  avatarUrl: string;
+  specialty: string;
+  availability: Record<string, string[]>;
+};
