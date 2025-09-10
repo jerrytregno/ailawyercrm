@@ -27,9 +27,10 @@ import {
   SidebarMenuButton,
   SidebarInset,
   SidebarTrigger,
+  SidebarFooter,
 } from '@/components/ui/sidebar';
 import { Logo } from '@/components/logo';
-import { LayoutDashboard, Users, FileText, Settings, Search, Bell, GitBranch, CalendarDays } from 'lucide-react';
+import { Users, FileText, Settings, Search, Bell, GitBranch, CalendarDays, LogOut } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 
 const navItems = [
@@ -65,6 +66,18 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             ))}
           </SidebarMenu>
         </SidebarContent>
+        <SidebarFooter>
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild tooltip={{children: "Logout"}}>
+                  <Link href="/login">
+                    <LogOut />
+                    <span>Logout</span>
+                  </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarFooter>
       </Sidebar>
       <SidebarInset>
         <header className="flex h-16 items-center justify-between border-b bg-card px-4 md:px-6">
