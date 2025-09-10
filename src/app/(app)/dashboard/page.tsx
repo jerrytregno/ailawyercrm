@@ -15,7 +15,7 @@ import { format } from "date-fns";
 import { collection, getDocs, QueryDocumentSnapshot, DocumentData } from "firebase/firestore";
 
 import { db } from "@/lib/firebase";
-import { type Lead, type Lawyer } from "@/lib/types";
+import { type Lead, type Lawyer, type Appointment } from "@/lib/types";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -35,7 +35,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-import { appointments, clients, lawyers } from "@/lib/data";
+import { appointments as staticAppointments, clients, lawyers } from "@/lib/data";
 
 type AllocatedLead = Lead & { allocatedTo: Lawyer | null };
 
@@ -53,6 +53,13 @@ function allocateLeads(leads: Lead[], lawyers: Lawyer[]): AllocatedLead[] {
 export default function DashboardPage() {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
+  const [upcomingAppointments, setUpcomingAppointments] = useState<Appointment[]>([]);
+  
+  useEffect(() => {
+    // This will only run on the client, preventing hydration mismatch
+    const filteredAppointments = staticAppointments.filter(a => a.status === 'Upcoming').slice(0, 3);
+    setUpcomingAppointments(filteredAppointments);
+  }, []);
 
   useEffect(() => {
     async function fetchLeads() {
@@ -83,7 +90,6 @@ export default function DashboardPage() {
     fetchLeads();
   }, []);
 
-  const upcomingAppointments = appointments.filter(a => a.status === 'Upcoming').slice(0, 3);
   const allocatedLeads = allocateLeads(leads, lawyers);
 
   return (
@@ -119,7 +125,7 @@ export default function DashboardPage() {
             <Calendar className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{appointments.filter(a => a.status === 'Upcoming').length}</div>
+            <div className="text-2xl font-bold">{staticAppointments.filter(a => a.status === 'Upcoming').length}</div>
             <p className="text-xs text-muted-foreground">in the next 7 days</p>
           </CardContent>
         </Card>
