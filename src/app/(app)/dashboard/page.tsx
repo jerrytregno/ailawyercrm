@@ -37,34 +37,7 @@ import {
 
 import { appointments as staticAppointments, clients } from "@/lib/data";
 
-type AllocatedLead = Lead & { allocatedTo: Lawyer | null };
-
-// Simple round-robin allocation for leads that are not yet assigned
-function allocateLeads(leads: Lead[], lawyers: Lawyer[]): AllocatedLead[] {
-    if (lawyers.length === 0) {
-      return leads.map(lead => ({ ...lead, allocatedTo: null }));
-    }
-  
-    const lawyerMap = new Map(lawyers.map(l => [l.id, l]));
-    let unassignedLeadIndex = 0;
-  
-    return leads.map((lead) => {
-      if (lead.assignedTo) {
-        return {
-          ...lead,
-          allocatedTo: lawyerMap.get(lead.assignedTo) || null,
-        };
-      } else {
-        const assignedLawyer = lawyers[unassignedLeadIndex % lawyers.length];
-        unassignedLeadIndex++;
-        return {
-          ...lead,
-          allocatedTo: assignedLawyer,
-        };
-      }
-    });
-}
-
+type LeadWithLawyer = Lead & { allocatedTo: Lawyer | null };
 
 export default function DashboardPage() {
   const [leads, setLeads] = useState<Lead[]>([]);
@@ -72,7 +45,7 @@ export default function DashboardPage() {
   const [loadingLeads, setLoadingLeads] = useState(true);
   const [loadingLawyers, setLoadingLawyers] = useState(true);
   const [upcomingAppointments, setUpcomingAppointments] = useState<Appointment[]>([]);
-  const [allocatedLeads, setAllocatedLeads] = useState<AllocatedLead[]>([]);
+  const [leadsWithLawyers, setLeadsWithLawyers] = useState<LeadWithLawyer[]>([]);
   
   useEffect(() => {
     const filteredAppointments = staticAppointments.filter(a => a.status === 'Upcoming').slice(0, 3);
@@ -133,7 +106,12 @@ export default function DashboardPage() {
 
   useEffect(() => {
     if (!loadingLeads && !loadingLawyers) {
-      setAllocatedLeads(allocateLeads(leads, lawyers));
+      const lawyerMap = new Map(lawyers.map(l => [l.id, l]));
+      const combinedData = leads.map(lead => ({
+        ...lead,
+        allocatedTo: lead.assignedTo ? lawyerMap.get(lead.assignedTo) || null : null
+      }));
+      setLeadsWithLawyers(combinedData);
     }
   }, [leads, lawyers, loadingLeads, loadingLawyers]);
 
@@ -220,8 +198,8 @@ export default function DashboardPage() {
                   <TableRow>
                     <TableCell colSpan={3} className="text-center h-24">Loading leads...</TableCell>
                   </TableRow>
-                ) : allocatedLeads.length > 0 ? (
-                  allocatedLeads.map((lead) => (
+                ) : leadsWithLawyers.length > 0 ? (
+                  leadsWithLawyers.map((lead) => (
                     <TableRow key={lead.id}>
                       <TableCell>
                         <div className="font-medium">{lead.name}</div>
