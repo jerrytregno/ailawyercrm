@@ -35,6 +35,7 @@ export type Lead = {
   createdAt: string;
   voice_transcript: string;
   status: 'New' | 'Contacted' | 'Qualified' | 'Disqualified';
+  assignedTo?: string; // Lawyer ID
 };
 
 export type Appointment = {

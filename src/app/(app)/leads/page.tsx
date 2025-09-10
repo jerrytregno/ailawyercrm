@@ -2,13 +2,13 @@
 'use client';
 
 import { useState, useEffect } from "react";
-import { collection, getDocs, QueryDocumentSnapshot, DocumentData } from "firebase/firestore";
+import { collection, getDocs, doc, updateDoc, QueryDocumentSnapshot, DocumentData } from "firebase/firestore";
 import { format } from "date-fns";
-import { Loader2, Languages, Video, FileText } from "lucide-react";
+import { Loader2, Languages, UserCheck } from "lucide-react";
 import Link from 'next/link';
 
 import { db } from "@/lib/firebase";
-import { type Lead } from "@/lib/types";
+import { type Lead, type Lawyer } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -36,6 +36,7 @@ import {
 } from "@/components/ui/dialog";
 import { translateText } from "@/ai/flows/translate-text";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Badge } from "@/components/ui/badge";
 
 function LeadDetailPopup({ lead, isOpen, onClose }: { lead: Lead | null, isOpen: boolean, onClose: () => void }) {
     const [transcript, setTranscript] = useState('');
@@ -53,7 +54,6 @@ function LeadDetailPopup({ lead, isOpen, onClose }: { lead: Lead | null, isOpen:
 
     const handleTranslate = async () => {
         if (!transcript || isTranslated) return;
-        const originalTranscript = transcript;
         setIsTranslating(true);
         try {
             const result = await translateText({ text: transcript, targetLanguage: 'English' });
@@ -72,7 +72,6 @@ function LeadDetailPopup({ lead, isOpen, onClose }: { lead: Lead | null, isOpen:
     };
 
     const handleClose = () => {
-        // Reset state on close
         setTranscript('');
         setIsTranslated(false);
         setIsTranslating(false);
@@ -107,36 +106,63 @@ function LeadDetailPopup({ lead, isOpen, onClose }: { lead: Lead | null, isOpen:
 
 export default function LeadsPage() {
   const [leads, setLeads] = useState<Lead[]>([]);
+  const [lawyers, setLawyers] = useState<Lawyer[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
 
-  useEffect(() => {
-    async function fetchLeads() {
-      try {
-        const querySnapshot = await getDocs(collection(db, "users"));
-        const leadsData: Lead[] = querySnapshot.docs.map((doc: QueryDocumentSnapshot<DocumentData>) => {
-            const data = doc.data();
-            return {
-                id: doc.id,
-                name: data.name || '',
-                email: data.email || '',
-                whatsapp: data.whatsapp || '',
-                language: data.language || '',
-                amount: data.amount || '',
-                createdAt: data.created_at?.toDate ? data.created_at.toDate().toISOString() : new Date(data.created_at).toISOString(),
-                voice_transcript: data.voice_transcript || '',
-                status: 'New'
-            }
-        }).filter(lead => lead.email || lead.whatsapp);
-        setLeads(leadsData);
-      } catch (error) {
-        console.error("Error fetching leads:", error);
-      } finally {
-        setLoading(false);
-      }
-    }
+  // For demo, assume the first lawyer is the current user
+  const currentLawyer = lawyers[0]; 
 
-    fetchLeads();
+  const fetchLeads = async () => {
+    try {
+      const querySnapshot = await getDocs(collection(db, "users"));
+      const leadsData: Lead[] = querySnapshot.docs.map((doc: QueryDocumentSnapshot<DocumentData>) => {
+          const data = doc.data();
+          return {
+              id: doc.id,
+              name: data.name || '',
+              email: data.email || '',
+              whatsapp: data.whatsapp || '',
+              language: data.language || '',
+              amount: data.amount || '',
+              createdAt: data.created_at?.toDate ? data.created_at.toDate().toISOString() : new Date(data.created_at).toISOString(),
+              voice_transcript: data.voice_transcript || '',
+              status: 'New',
+              assignedTo: data.assignedTo,
+          }
+      }).filter(lead => lead.email || lead.whatsapp);
+      setLeads(leadsData);
+    } catch (error) {
+      console.error("Error fetching leads:", error);
+    }
+  };
+
+  const fetchLawyers = async () => {
+    try {
+      const querySnapshot = await getDocs(collection(db, "lawyers"));
+      const lawyersData: Lawyer[] = querySnapshot.docs.map((doc: QueryDocumentSnapshot<DocumentData>) => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          name: data.name || '',
+          avatarUrl: data.avatarUrl || '',
+          specialty: data.specialty || '',
+          availability: data.availability || {},
+        };
+      });
+      setLawyers(lawyersData);
+    } catch (error) {
+      console.error("Error fetching lawyers:", error);
+    }
+  };
+
+  useEffect(() => {
+    const fetchData = async () => {
+        setLoading(true);
+        await Promise.all([fetchLeads(), fetchLawyers()]);
+        setLoading(false);
+    }
+    fetchData();
   }, []);
   
   const handleTranscriptClick = (lead: Lead) => {
@@ -147,23 +173,23 @@ export default function LeadsPage() {
     setSelectedLead(null);
   };
 
-  const createGoogleCalendarLink = (lead: Lead) => {
-    const now = new Date();
-    const startTime = now.toISOString().replace(/-|:|\.\d+/g, '');
-    const endTime = new Date(now.getTime() + 60 * 60 * 1000).toISOString().replace(/-|:|\.\d+/g, '');
+  const handleTakeLead = async (leadId: string) => {
+    if (!currentLawyer) return;
 
-    const details = `Meeting with ${lead.name} (${lead.email}).\n\nLead Details:\nAmount: ${lead.amount}\nLanguage: ${lead.language}`;
-
-    const url = new URL('https://calendar.google.com/calendar/render');
-    url.searchParams.set('action', 'TEMPLATE');
-    url.searchParams.set('text', `Meeting with ${lead.name}`);
-    url.searchParams.set('dates', `${startTime}/${endTime}`);
-    url.searchParams.set('details', details);
-    url.searchParams.set('add', lead.email);
-    url.searchParams.set('location', 'Google Meet');
-    return url.toString();
+    try {
+      const leadRef = doc(db, 'users', leadId);
+      await updateDoc(leadRef, { assignedTo: currentLawyer.id });
+      // Refresh leads data
+      await fetchLeads();
+    } catch (error) {
+      console.error("Error taking lead:", error);
+    }
   };
 
+  const getAssignedLawyerName = (lawyerId: string) => {
+    const lawyer = lawyers.find(l => l.id === lawyerId);
+    return lawyer ? lawyer.name : 'Unknown';
+  };
 
   return (
     <>
@@ -183,30 +209,31 @@ export default function LeadsPage() {
           <TableHeader>
             <TableRow>
               <TableHead>Name</TableHead>
-              <TableHead>Email</TableHead>
-              <TableHead>WhatsApp</TableHead>
+              <TableHead>Contact</TableHead>
               <TableHead>Language</TableHead>
               <TableHead>Amount</TableHead>
               <TableHead>Voice Transcript</TableHead>
               <TableHead className="hidden md:table-cell">Created At</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
+              <TableHead className="text-right">Status</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {loading ? (
                 <TableRow>
-                    <TableCell colSpan={8} className="text-center">Loading leads...</TableCell>
+                    <TableCell colSpan={7} className="text-center h-24">Loading leads...</TableCell>
                 </TableRow>
             ) : leads.length === 0 ? (
                  <TableRow>
-                    <TableCell colSpan={8} className="text-center">No leads found.</TableCell>
+                    <TableCell colSpan={7} className="text-center h-24">No leads found.</TableCell>
                 </TableRow>
             ) : (
                 leads.map((lead) => (
                 <TableRow key={lead.id}>
                     <TableCell className="font-medium">{lead.name}</TableCell>
-                    <TableCell>{lead.email}</TableCell>
-                    <TableCell>{lead.whatsapp}</TableCell>
+                    <TableCell>
+                        <div className="text-sm">{lead.email}</div>
+                        <div className="text-sm text-muted-foreground">{lead.whatsapp}</div>
+                    </TableCell>
                     <TableCell>{lead.language}</TableCell>
                     <TableCell>{lead.amount}</TableCell>
                     <TableCell className="max-w-xs truncate">
@@ -215,21 +242,17 @@ export default function LeadsPage() {
                       </button>
                     </TableCell>
                     <TableCell className="hidden md:table-cell">
-                    {format(new Date(lead.createdAt), "MMM d, yyyy")}
+                      {format(new Date(lead.createdAt), "MMM d, yyyy")}
                     </TableCell>
-                    <TableCell className="text-right flex justify-end gap-2">
-                        <Button asChild variant="outline" size="sm">
-                            <Link href={createGoogleCalendarLink(lead)} target="_blank">
-                                <Video className="mr-2 h-4 w-4" />
-                                Schedule
-                            </Link>
+                    <TableCell className="text-right">
+                      {lead.assignedTo ? (
+                        <Badge variant="secondary">Assigned to {getAssignedLawyerName(lead.assignedTo)}</Badge>
+                      ) : (
+                        <Button variant="outline" size="sm" onClick={() => handleTakeLead(lead.id)} disabled={!currentLawyer}>
+                            <UserCheck className="mr-2 h-4 w-4" />
+                            Take Lead
                         </Button>
-                        <Button asChild variant="outline" size="sm">
-                           <Link href={`/drafts?leadName=${encodeURIComponent(lead.name)}&caseDetails=${encodeURIComponent(lead.voice_transcript)}`}>
-                                <FileText className="mr-2 h-4 w-4" />
-                                Write Draft
-                            </Link>
-                        </Button>
+                      )}
                     </TableCell>
                 </TableRow>
                 ))

@@ -39,16 +39,32 @@ import { appointments as staticAppointments, clients } from "@/lib/data";
 
 type AllocatedLead = Lead & { allocatedTo: Lawyer | null };
 
-// Simple round-robin allocation
+// Simple round-robin allocation for leads that are not yet assigned
 function allocateLeads(leads: Lead[], lawyers: Lawyer[]): AllocatedLead[] {
-  if (lawyers.length === 0) {
-    return leads.map(lead => ({ ...lead, allocatedTo: null }));
-  }
-  return leads.map((lead, index) => ({
-    ...lead,
-    allocatedTo: lawyers[index % lawyers.length],
-  }));
+    if (lawyers.length === 0) {
+      return leads.map(lead => ({ ...lead, allocatedTo: null }));
+    }
+  
+    const lawyerMap = new Map(lawyers.map(l => [l.id, l]));
+    let unassignedLeadIndex = 0;
+  
+    return leads.map((lead) => {
+      if (lead.assignedTo) {
+        return {
+          ...lead,
+          allocatedTo: lawyerMap.get(lead.assignedTo) || null,
+        };
+      } else {
+        const assignedLawyer = lawyers[unassignedLeadIndex % lawyers.length];
+        unassignedLeadIndex++;
+        return {
+          ...lead,
+          allocatedTo: assignedLawyer,
+        };
+      }
+    });
 }
+
 
 export default function DashboardPage() {
   const [leads, setLeads] = useState<Lead[]>([]);
@@ -59,7 +75,6 @@ export default function DashboardPage() {
   const [allocatedLeads, setAllocatedLeads] = useState<AllocatedLead[]>([]);
   
   useEffect(() => {
-    // This will only run on the client, preventing hydration mismatch
     const filteredAppointments = staticAppointments.filter(a => a.status === 'Upcoming').slice(0, 3);
     setUpcomingAppointments(filteredAppointments);
   }, []);
@@ -79,7 +94,8 @@ export default function DashboardPage() {
                 amount: data.amount || '',
                 createdAt: data.created_at?.toDate ? data.created_at.toDate().toISOString() : new Date(data.created_at).toISOString(),
                 voice_transcript: data.voice_transcript || '',
-                status: 'New'
+                status: 'New',
+                assignedTo: data.assignedTo || undefined,
             }
         }).filter(lead => lead.email || lead.whatsapp);
         setLeads(leadsData);
