@@ -110,9 +110,6 @@ export default function LeadsPage() {
   const [loading, setLoading] = useState(true);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
 
-  // For demo, assume the first lawyer is the current user
-  const currentLawyer = lawyers.length > 0 ? lawyers[0] : null; 
-
   useEffect(() => {
     const fetchLeads = async () => {
         try {
@@ -171,22 +168,6 @@ export default function LeadsPage() {
 
   const handleClosePopup = () => {
     setSelectedLead(null);
-  };
-
-  const handleTakeLead = async (leadId: string) => {
-    if (!currentLawyer) return;
-
-    try {
-      const leadRef = doc(db, 'users', leadId);
-      await updateDoc(leadRef, { assignedTo: currentLawyer.id });
-      setLeads((prevLeads) => 
-        prevLeads.map((lead) => 
-            lead.id === leadId ? { ...lead, assignedTo: currentLawyer.id } : lead
-        )
-      );
-    } catch (error) {
-      console.error("Error taking lead:", error);
-    }
   };
 
   const getAssignedLawyerName = (lawyerId: string) => {
@@ -252,10 +233,6 @@ export default function LeadsPage() {
                         <Badge variant="secondary">Assigned to {getAssignedLawyerName(lead.assignedTo)}</Badge>
                       ) : (
                         <div className="flex justify-end gap-2">
-                           <Button variant="outline" size="sm" onClick={() => handleTakeLead(lead.id)} disabled={!currentLawyer}>
-                                <UserCheck className="mr-2 h-4 w-4" />
-                                Take Lead
-                            </Button>
                              <Button asChild variant="outline" size="sm">
                                 <Link href={`/drafts?leadName=${encodeURIComponent(lead.name)}&caseDetails=${encodeURIComponent(lead.voice_transcript)}`}>
                                     <FileText className="mr-2 h-4 w-4" /> Write Draft
