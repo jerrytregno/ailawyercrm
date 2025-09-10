@@ -33,7 +33,6 @@ import { LayoutDashboard, Users, FileText, Settings, Search, Bell, GitBranch, Ca
 import { Input } from '@/components/ui/input';
 
 const navItems = [
-  { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
   { href: '/leads', icon: GitBranch, label: 'Leads' },
   { href: '/drafts', icon: FileText, label: 'Legal Drafts' },
   { href: '/set-availability', icon: CalendarDays, label: 'Availability' },
@@ -73,7 +72,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             <SidebarTrigger className="md:hidden" />
             <div className="hidden md:block">
               <h1 className="text-lg font-semibold capitalize">
-                {pathname.split('/').pop()?.replace('-', ' ') || 'Dashboard'}
+                {pathname.split('/').pop()?.replace('-', ' ') || 'Leads'}
               </h1>
             </div>
           </div>

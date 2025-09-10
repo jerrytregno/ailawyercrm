@@ -66,8 +66,8 @@ export function SetAvailabilityForm() {
   const handleSaveChanges = () => {
     // Here you would typically save the availability to your database
     console.log('Saved Availability:', availability);
-    // For this example, we'll just navigate to the dashboard
-    router.push('/dashboard');
+    // For this example, we'll just navigate to the leads page
+    router.push('/leads');
   };
 
   const selectedDays =
