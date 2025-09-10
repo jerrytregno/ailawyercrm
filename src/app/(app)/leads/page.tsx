@@ -113,50 +113,50 @@ export default function LeadsPage() {
   // For demo, assume the first lawyer is the current user
   const currentLawyer = lawyers[0]; 
 
-  const fetchLeads = async () => {
-    try {
-      const querySnapshot = await getDocs(collection(db, "users"));
-      const leadsData: Lead[] = querySnapshot.docs.map((doc: QueryDocumentSnapshot<DocumentData>) => {
-          const data = doc.data();
-          return {
+  useEffect(() => {
+    const fetchLeads = async () => {
+        try {
+          const querySnapshot = await getDocs(collection(db, "users"));
+          const leadsData: Lead[] = querySnapshot.docs.map((doc: QueryDocumentSnapshot<DocumentData>) => {
+              const data = doc.data();
+              return {
+                  id: doc.id,
+                  name: data.name || '',
+                  email: data.email || '',
+                  whatsapp: data.whatsapp || '',
+                  language: data.language || '',
+                  amount: data.amount || '',
+                  createdAt: data.created_at?.toDate ? data.created_at.toDate().toISOString() : new Date(data.created_at).toISOString(),
+                  voice_transcript: data.voice_transcript || '',
+                  status: 'New',
+                  assignedTo: data.assignedTo,
+              }
+          }).filter(lead => lead.email || lead.whatsapp);
+          setLeads(leadsData);
+        } catch (error) {
+          console.error("Error fetching leads:", error);
+        }
+      };
+    
+      const fetchLawyers = async () => {
+        try {
+          const querySnapshot = await getDocs(collection(db, "lawyers"));
+          const lawyersData: Lawyer[] = querySnapshot.docs.map((doc: QueryDocumentSnapshot<DocumentData>) => {
+            const data = doc.data();
+            return {
               id: doc.id,
               name: data.name || '',
-              email: data.email || '',
-              whatsapp: data.whatsapp || '',
-              language: data.language || '',
-              amount: data.amount || '',
-              createdAt: data.created_at?.toDate ? data.created_at.toDate().toISOString() : new Date(data.created_at).toISOString(),
-              voice_transcript: data.voice_transcript || '',
-              status: 'New',
-              assignedTo: data.assignedTo,
-          }
-      }).filter(lead => lead.email || lead.whatsapp);
-      setLeads(leadsData);
-    } catch (error) {
-      console.error("Error fetching leads:", error);
-    }
-  };
+              avatarUrl: data.avatarUrl || '',
+              specialty: data.specialty || '',
+              availability: data.availability || {},
+            };
+          });
+          setLawyers(lawyersData);
+        } catch (error) {
+          console.error("Error fetching lawyers:", error);
+        }
+      };
 
-  const fetchLawyers = async () => {
-    try {
-      const querySnapshot = await getDocs(collection(db, "lawyers"));
-      const lawyersData: Lawyer[] = querySnapshot.docs.map((doc: QueryDocumentSnapshot<DocumentData>) => {
-        const data = doc.data();
-        return {
-          id: doc.id,
-          name: data.name || '',
-          avatarUrl: data.avatarUrl || '',
-          specialty: data.specialty || '',
-          availability: data.availability || {},
-        };
-      });
-      setLawyers(lawyersData);
-    } catch (error) {
-      console.error("Error fetching lawyers:", error);
-    }
-  };
-
-  useEffect(() => {
     const fetchData = async () => {
         setLoading(true);
         await Promise.all([fetchLeads(), fetchLawyers()]);
@@ -179,8 +179,11 @@ export default function LeadsPage() {
     try {
       const leadRef = doc(db, 'users', leadId);
       await updateDoc(leadRef, { assignedTo: currentLawyer.id });
-      // Refresh leads data
-      await fetchLeads();
+      setLeads((prevLeads) => 
+        prevLeads.map((lead) => 
+            lead.id === leadId ? { ...lead, assignedTo: currentLawyer.id } : lead
+        )
+      );
     } catch (error) {
       console.error("Error taking lead:", error);
     }
@@ -278,4 +281,3 @@ export default function LeadsPage() {
     </>
   );
 }
-
