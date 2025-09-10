@@ -1,3 +1,4 @@
+
 import Link from "next/link"
 
 import { Button } from "@/components/ui/button"
@@ -34,19 +35,11 @@ export default function LoginPage() {
             />
           </div>
           <div className="grid gap-2">
-            <div className="flex items-center">
-              <Label htmlFor="password">Password</Label>
-              <Link href="#" className="ml-auto inline-block text-sm underline">
-                Forgot your password?
-              </Link>
-            </div>
+            <Label htmlFor="password">Password</Label>
             <Input id="password" type="password" required />
           </div>
           <Button type="submit" className="w-full" asChild>
             <Link href="/leads">Login</Link>
-          </Button>
-          <Button variant="outline" className="w-full">
-            Login with Google
           </Button>
         </div>
       </CardContent>
