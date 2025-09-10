@@ -111,7 +111,7 @@ export default function LeadsPage() {
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
 
   // For demo, assume the first lawyer is the current user
-  const currentLawyer = lawyers[0]; 
+  const currentLawyer = lawyers.length > 0 ? lawyers[0] : null; 
 
   useEffect(() => {
     const fetchLeads = async () => {
