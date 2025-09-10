@@ -4,7 +4,7 @@
 import { useState, useEffect } from "react";
 import { collection, getDocs, doc, updateDoc, QueryDocumentSnapshot, DocumentData } from "firebase/firestore";
 import { format } from "date-fns";
-import { Loader2, Languages, UserCheck } from "lucide-react";
+import { Loader2, Languages, UserCheck, FileText } from "lucide-react";
 import Link from 'next/link';
 
 import { db } from "@/lib/firebase";
@@ -214,7 +214,7 @@ export default function LeadsPage() {
               <TableHead>Amount</TableHead>
               <TableHead>Voice Transcript</TableHead>
               <TableHead className="hidden md:table-cell">Created At</TableHead>
-              <TableHead className="text-right">Status</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -248,10 +248,17 @@ export default function LeadsPage() {
                       {lead.assignedTo ? (
                         <Badge variant="secondary">Assigned to {getAssignedLawyerName(lead.assignedTo)}</Badge>
                       ) : (
-                        <Button variant="outline" size="sm" onClick={() => handleTakeLead(lead.id)} disabled={!currentLawyer}>
-                            <UserCheck className="mr-2 h-4 w-4" />
-                            Take Lead
-                        </Button>
+                        <div className="flex justify-end gap-2">
+                           <Button variant="outline" size="sm" onClick={() => handleTakeLead(lead.id)} disabled={!currentLawyer}>
+                                <UserCheck className="mr-2 h-4 w-4" />
+                                Take Lead
+                            </Button>
+                             <Button asChild variant="outline" size="sm">
+                                <Link href={`/drafts?leadName=${encodeURIComponent(lead.name)}&caseDetails=${encodeURIComponent(lead.voice_transcript)}`}>
+                                    <FileText className="mr-2 h-4 w-4" /> Write Draft
+                                </Link>
+                            </Button>
+                        </div>
                       )}
                     </TableCell>
                 </TableRow>
@@ -271,3 +278,4 @@ export default function LeadsPage() {
     </>
   );
 }
+
