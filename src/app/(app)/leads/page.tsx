@@ -175,6 +175,17 @@ export default function LeadsPage() {
     return lawyer ? lawyer.name : 'Unknown';
   };
 
+  const generateGoogleCalendarLink = (lead: Lead) => {
+    const baseUrl = "https://calendar.google.com/calendar/render";
+    const params = new URLSearchParams({
+      action: "TEMPLATE",
+      text: `Meeting with ${lead.name}`,
+      details: `Scheduled meeting to discuss: ${lead.voice_transcript}`,
+      add: lead.email,
+    });
+    return `${baseUrl}?${params.toString()}`;
+  }
+
   return (
     <>
     <Card>
@@ -233,8 +244,10 @@ export default function LeadsPage() {
                         <Badge variant="secondary">Assigned to {getAssignedLawyerName(lead.assignedTo)}</Badge>
                       ) : (
                         <div className="flex justify-end gap-2">
-                            <Button variant="outline" size="sm">
-                                <Video className="mr-2 h-4 w-4" /> Schedule Meeting
+                            <Button asChild variant="outline" size="sm">
+                                <a href={generateGoogleCalendarLink(lead)} target="_blank" rel="noopener noreferrer">
+                                    <Video className="mr-2 h-4 w-4" /> Schedule Meeting
+                                </a>
                             </Button>
                             <Button asChild variant="outline" size="sm">
                                 <Link href={`/drafts?leadName=${encodeURIComponent(lead.name)}&caseDetails=${encodeURIComponent(lead.voice_transcript)}`}>
