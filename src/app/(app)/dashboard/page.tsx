@@ -71,7 +71,7 @@ export default function DashboardPage() {
                 voice_transcript: data.voice_transcript || '',
                 status: 'New'
             }
-        });
+        }).filter(lead => lead.email || lead.whatsapp);
         setLeads(leadsData);
       } catch (error) {
         console.error("Error fetching leads:", error);
