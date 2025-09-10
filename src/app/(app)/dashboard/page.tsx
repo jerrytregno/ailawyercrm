@@ -35,7 +35,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-import { appointments as staticAppointments, clients, lawyers } from "@/lib/data";
+import { appointments as staticAppointments, clients } from "@/lib/data";
 
 type AllocatedLead = Lead & { allocatedTo: Lawyer | null };
 
@@ -52,8 +52,11 @@ function allocateLeads(leads: Lead[], lawyers: Lawyer[]): AllocatedLead[] {
 
 export default function DashboardPage() {
   const [leads, setLeads] = useState<Lead[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [lawyers, setLawyers] = useState<Lawyer[]>([]);
+  const [loadingLeads, setLoadingLeads] = useState(true);
+  const [loadingLawyers, setLoadingLawyers] = useState(true);
   const [upcomingAppointments, setUpcomingAppointments] = useState<Appointment[]>([]);
+  const [allocatedLeads, setAllocatedLeads] = useState<AllocatedLead[]>([]);
   
   useEffect(() => {
     // This will only run on the client, preventing hydration mismatch
@@ -83,14 +86,41 @@ export default function DashboardPage() {
       } catch (error) {
         console.error("Error fetching leads:", error);
       } finally {
-        setLoading(false);
+        setLoadingLeads(false);
+      }
+    }
+
+    async function fetchLawyers() {
+      try {
+        const querySnapshot = await getDocs(collection(db, "lawyers"));
+        const lawyersData: Lawyer[] = querySnapshot.docs.map((doc: QueryDocumentSnapshot<DocumentData>) => {
+          const data = doc.data();
+          return {
+            id: doc.id,
+            name: data.name || '',
+            avatarUrl: data.avatarUrl || 'https://picsum.photos/seed/placeholder/100/100',
+            specialty: data.specialty || 'General Practice',
+            availability: data.availability || {},
+          };
+        });
+        setLawyers(lawyersData);
+      } catch (error) {
+        console.error("Error fetching lawyers:", error);
+      } finally {
+        setLoadingLawyers(false);
       }
     }
 
     fetchLeads();
+    fetchLawyers();
   }, []);
 
-  const allocatedLeads = allocateLeads(leads, lawyers);
+  useEffect(() => {
+    if (!loadingLeads && !loadingLawyers) {
+      setAllocatedLeads(allocateLeads(leads, lawyers));
+    }
+  }, [leads, lawyers, loadingLeads, loadingLawyers]);
+
 
   return (
     <div className="flex flex-col gap-6">
@@ -170,7 +200,7 @@ export default function DashboardPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {loading ? (
+                {loadingLeads || loadingLawyers ? (
                   <TableRow>
                     <TableCell colSpan={3} className="text-center h-24">Loading leads...</TableCell>
                   </TableRow>

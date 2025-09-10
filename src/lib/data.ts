@@ -106,29 +106,7 @@ export const legalDrafts: LegalDraft[] = [
     }
 ];
 
-export const lawyers: Lawyer[] = [
-  {
-    id: 'lawyer1',
-    name: 'John Smith',
-    avatarUrl: 'https://picsum.photos/seed/lawyer1/100/100',
-    specialty: 'Corporate Law',
-    availability: { '2024-09-01': ['09:00', '10:00', '14:00'] },
-  },
-  {
-    id: 'lawyer2',
-    name: 'Jane Doe',
-    avatarUrl: 'https://picsum.photos/seed/lawyer2/100/100',
-    specialty: 'Intellectual Property',
-    availability: { '2024-09-01': ['11:00', '15:00'], '2024-09-02': ['10:00'] },
-  },
-  {
-    id: 'lawyer3',
-    name: 'Peter Jones',
-    avatarUrl: 'https://picsum.photos/seed/lawyer3/100/100',
-    specialty: 'Real Estate',
-    availability: { '2024-09-02': ['14:00', '16:00'] },
-  },
-];
+export const lawyers: Lawyer[] = [];
 
 
 export const getClientById = (id: string) => clients.find(c => c.id === id);
