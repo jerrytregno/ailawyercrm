@@ -35,7 +35,6 @@ import { Input } from '@/components/ui/input';
 const navItems = [
   { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
   { href: '/leads', icon: GitBranch, label: 'Leads' },
-  { href: '/clients', icon: Users, label: 'Clients' },
   { href: '/drafts', icon: FileText, label: 'Legal Drafts' },
   { href: '/set-availability', icon: CalendarDays, label: 'Availability' },
 ];

@@ -238,12 +238,6 @@ export default function DashboardPage() {
                 You have {upcomingAppointments.length} upcoming appointments.
               </CardDescription>
             </div>
-            <Button asChild size="sm" className="ml-auto gap-1">
-              <Link href="/clients">
-                View All
-                <ArrowUpRight className="h-4 w-4" />
-              </Link>
-            </Button>
           </CardHeader>
           <CardContent className="grid gap-6">
             {upcomingAppointments.map((appointment) => (
