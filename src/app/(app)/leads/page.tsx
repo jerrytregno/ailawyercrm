@@ -4,7 +4,7 @@
 import { useState, useEffect } from "react";
 import { collection, getDocs, doc, updateDoc, QueryDocumentSnapshot, DocumentData } from "firebase/firestore";
 import { format } from "date-fns";
-import { Loader2, Languages, UserCheck, FileText } from "lucide-react";
+import { Loader2, Languages, UserCheck, FileText, Video } from "lucide-react";
 import Link from 'next/link';
 
 import { db } from "@/lib/firebase";
@@ -233,7 +233,10 @@ export default function LeadsPage() {
                         <Badge variant="secondary">Assigned to {getAssignedLawyerName(lead.assignedTo)}</Badge>
                       ) : (
                         <div className="flex justify-end gap-2">
-                             <Button asChild variant="outline" size="sm">
+                            <Button variant="outline" size="sm">
+                                <Video className="mr-2 h-4 w-4" /> Schedule Meeting
+                            </Button>
+                            <Button asChild variant="outline" size="sm">
                                 <Link href={`/drafts?leadName=${encodeURIComponent(lead.name)}&caseDetails=${encodeURIComponent(lead.voice_transcript)}`}>
                                     <FileText className="mr-2 h-4 w-4" /> Write Draft
                                 </Link>
