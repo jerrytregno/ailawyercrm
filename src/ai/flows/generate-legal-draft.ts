@@ -13,9 +13,9 @@ import {z} from 'genkit';
 
 const GenerateLegalDraftInputSchema = z.object({
   clientName: z.string().describe('The full name of the client.'),
-  caseDetails: z.string().describe('Detailed information about the legal case.'),
-  documentType: z.string().describe('The type of legal document to generate (e.g., contract, will, etc.).'),
-  relevantJurisdiction: z.string().describe('The relevant jurisdiction for the legal document (e.g., California, New York, etc.).'),
+  caseDetails: z.string().describe('Detailed information about the legal case, including all relevant facts, involved parties, and desired outcomes.'),
+  documentType: z.string().describe('The type of legal document to generate (e.g., Legal Notice, Contract, Will).'),
+  relevantJurisdiction: z.string().describe('The relevant jurisdiction for the legal document (e.g., California, New York, Chennai).'),
 });
 export type GenerateLegalDraftInput = z.infer<typeof GenerateLegalDraftInputSchema>;
 
@@ -32,16 +32,59 @@ const prompt = ai.definePrompt({
   name: 'generateLegalDraftPrompt',
   input: {schema: GenerateLegalDraftInputSchema},
   output: {schema: GenerateLegalDraftOutputSchema},
-  prompt: `You are an AI legal assistant tasked with generating initial drafts of legal documents.
+  prompt: `You are an AI legal assistant tasked with generating initial drafts of legal documents based on a specific template.
 
-  Based on the information provided, create a draft of the legal document.  The draft should be well-structured and contain all necessary sections and clauses for the given document type and jurisdiction.
-
+  **Template to follow:**
+  
+  **Header:**
+  Email Id: legaltrishulaconsultancy@gmail.com
+  Address: A-5th Floor, Prince Info Park, Ambattur Industrial Estate Rd, Ambattur, Chennai, Tamil Nadu 600058
+  *Intellectual Property Rights | Civil & criminal litigation | Legal documentation | Corporate advisory | Legal Compliance*
+  
+  ---
+  
+  ### LEGAL NOTICE
+  
+  **By RPAD/By E-Mail**
+  **Ref. No.** [Generate a unique reference number]
+  **Date:** [Current Date]
+  
+  **To,**
+  [Recipient's Name/Title and Address - Extract from Case Details]
+  
+  **WITHOUT PREJUDICE**
+  
+  **Subject:** [Generate a concise subject line based on Case Details]
+  **Reference:** [Extract any relevant reference numbers or documents from Case Details]
+  
+  I write this under instructions from and on behalf of my client, **{{{clientName}}}**, (herein referred to as “my Client”). I am hereby serving you with this legal notice in unequivocal terms.
+  
+  **Body of the Notice:**
+  Based on the Case Details provided, construct a series of numbered paragraphs.
+  1.  Start by introducing the client and the context of the issue.
+  2.  Detail the sequence of events and facts clearly.
+  3.  If specific rules, laws, or contract clauses are violated, cite them as shown in the example.
+  4.  Clearly state the grievance or problem caused by the recipient's actions.
+  5.  Mention any prior attempts to resolve the issue (e.g., support tickets, emails).
+  6.  State the demands clearly, specifying a timeframe for compliance (e.g., "within 15 days").
+      a. [Demand 1]
+      b. [Demand 2]
+  7.  Describe the legal consequences of non-compliance.
+  8.  Include a "without prejudice" clause to reserve your client's rights.
+  9.  Specify the address for reply and future correspondence.
+  
+  ---
+  
+  **User Provided Information:**
+  
   Client Name: {{{clientName}}}
-  Case Details: {{{caseDetails}}}
   Document Type: {{{documentType}}}
   Relevant Jurisdiction: {{{relevantJurisdiction}}}
+  Case Details: {{{caseDetails}}}
 
-  Legal Draft:`,
+  ---
+
+  **Generated Legal Draft:**`,
 });
 
 const generateLegalDraftFlow = ai.defineFlow(
