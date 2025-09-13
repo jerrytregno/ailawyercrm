@@ -36,7 +36,6 @@ import { Input } from '@/components/ui/input';
 const navItems = [
   { href: '/leads', icon: GitBranch, label: 'Leads' },
   { href: '/drafts', icon: FileText, label: 'Legal Drafts' },
-  { href: '/set-availability', icon: CalendarDays, label: 'Availability' },
 ];
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
