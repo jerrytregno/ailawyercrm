@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect } from "react";
-import { collection, getDocs, doc, updateDoc, QueryDocumentSnapshot, DocumentData } from "firebase/firestore";
+import { collection, getDocs, QueryDocumentSnapshot, DocumentData } from "firebase/firestore";
 import { format } from "date-fns";
 import { Loader2, Languages, UserCheck, FileText, Video } from "lucide-react";
 import Link from 'next/link';
