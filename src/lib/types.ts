@@ -1,3 +1,4 @@
+
 import { z } from 'zod';
 
 export type Communication = {
@@ -36,6 +37,10 @@ export type Lead = {
   voice_transcript: string;
   status: 'New' | 'Contacted' | 'Qualified' | 'Disqualified';
   assignedTo?: string; // Lawyer ID
+  lead_type?: string;
+  client_id?: string;
+  ticket_id?: string;
+  lead_source?: string;
 };
 
 export type Appointment = {

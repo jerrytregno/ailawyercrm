@@ -4,20 +4,6 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@/components/ui/avatar"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Button } from '@/components/ui/button';
-import {
   SidebarProvider,
   Sidebar,
   SidebarHeader,
@@ -30,11 +16,12 @@ import {
   SidebarFooter,
 } from '@/components/ui/sidebar';
 import { Logo } from '@/components/logo';
-import { Users, FileText, Settings, Search, Bell, GitBranch, CalendarDays, LogOut } from 'lucide-react';
+import { Users, FileText, Settings, Search, Bell, GitBranch, CalendarDays, LogOut, Briefcase } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 
 const navItems = [
   { href: '/leads', icon: GitBranch, label: 'Leads' },
+  { href: '/existing-leads', icon: Briefcase, label: 'Existing Leads' },
   { href: '/drafts', icon: FileText, label: 'Legal Drafts' },
 ];
 
