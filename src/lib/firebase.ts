@@ -1,8 +1,6 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
@@ -13,6 +11,15 @@ const firebaseConfig = {
   messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
+
+// Server-side check for environment variables
+if (typeof window === 'undefined') {
+  for (const [key, value] of Object.entries(firebaseConfig)) {
+    if (!value) {
+      console.error(`Firebase config error: Missing environment variable NEXT_PUBLIC_${key.replace(/([A-Z])/g, '_$1').toUpperCase()}`);
+    }
+  }
+}
 
 // Initialize Firebase
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
