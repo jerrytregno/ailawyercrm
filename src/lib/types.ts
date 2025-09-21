@@ -72,3 +72,16 @@ export type Lawyer = {
   specialty: string;
   availability: Record<string, string[]>;
 };
+
+export type Meeting = {
+    id: string;
+    userName: string;
+    userContact: {
+        email: string;
+        phone: string;
+    };
+    meetingLink: string;
+    startTime: string;
+    endTime: string;
+    voiceTranscript: string;
+};

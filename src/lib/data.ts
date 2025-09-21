@@ -1,4 +1,5 @@
-import type { Client, Appointment, LegalDraft, Lead, Lawyer } from './types';
+
+import type { Client, Appointment, LegalDraft, Lead, Lawyer, Meeting } from './types';
 
 export const clients: Client[] = [
   {
@@ -108,5 +109,25 @@ export const legalDrafts: LegalDraft[] = [
 
 export const lawyers: Lawyer[] = [];
 
+export const meetings: Meeting[] = [
+    {
+        id: 'm1',
+        userName: 'Alice Johnson',
+        userContact: { email: 'alice.j@example.com', phone: '123-456-7890' },
+        meetingLink: 'https://meet.google.com/xyz-abc-pqr',
+        startTime: '2024-08-15T10:00:00Z',
+        endTime: '2024-08-15T10:30:00Z',
+        voiceTranscript: 'This is a sample transcript from the initial consultation with Alice Johnson regarding her corporate restructuring needs. She expressed concerns about shareholder rights and the timeline for the process.'
+    },
+    {
+        id: 'm2',
+        userName: 'Bob Williams',
+        userContact: { email: 'bob.w@example.com', phone: '234-567-8901' },
+        meetingLink: 'https://meet.google.com/def-ghi-jkl',
+        startTime: '2024-08-18T11:00:00Z',
+        endTime: '2024-08-18T11:45:00Z',
+        voiceTranscript: 'Strategy session with Bob Williams. Discussed the intellectual property claim, potential prior art, and options for litigation versus settlement. Bob is leaning towards sending a strong cease and desist letter first.'
+    },
+];
 
 export const getClientById = (id: string) => clients.find(c => c.id === id);
