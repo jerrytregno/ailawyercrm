@@ -1,5 +1,5 @@
 
-import type { Client, Appointment, LegalDraft, Lead, Lawyer, Meeting } from './types';
+import type { Client, Appointment, LegalDraft, Lawyer, Meeting } from './types';
 
 export const clients: Client[] = [
   {
@@ -109,6 +109,7 @@ export const legalDrafts: LegalDraft[] = [
 
 export const lawyers: Lawyer[] = [];
 
+// This mock data is no longer used by the meetings page but is kept for other potential uses.
 export const meetings: Meeting[] = [
     {
         id: 'm1',
