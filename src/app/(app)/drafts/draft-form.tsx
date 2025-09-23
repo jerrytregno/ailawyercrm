@@ -2,6 +2,7 @@
 'use client';
 
 import { useActionState, useEffect, useState } from 'react';
+import { useFormStatus } from 'react-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -33,25 +34,7 @@ const DraftSchema = z.object({
 type DraftFormValues = z.infer<typeof DraftSchema>;
 
 function SubmitButton() {
-    // Note: A simple loading state is used here as a workaround for useFormStatus
-    // limitations with useActionState in the same component.
-    const [pending, setPending] = useState(false);
-
-    useEffect(() => {
-        const form = document.querySelector('form');
-        const handleSubmit = () => setPending(true);
-        
-        form?.addEventListener('submit', handleSubmit);
-        
-        // A more robust solution would listen for the form submission result.
-        // For now, reset after a timeout as a simple UX improvement.
-        const timer = setTimeout(() => setPending(false), 5000);
-
-        return () => {
-            form?.removeEventListener('submit', handleSubmit);
-            clearTimeout(timer);
-        };
-    }, []);
+    const { pending } = useFormStatus();
 
     return (
         <Button type="submit" disabled={pending} className="w-full">
