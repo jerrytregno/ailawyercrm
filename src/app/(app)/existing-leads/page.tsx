@@ -258,7 +258,7 @@ export default function ExistingLeadsPage() {
                                 </a>
                             </Button>
                             <Button asChild variant="outline" size="sm">
-                                <Link href={`/drafts?leadName=${encodeURIComponent(lead.name)}&caseDetails=${encodeURIComponent(lead.voice_transcript)}`}>
+                                <Link href={`/drafts?leadId=${lead.id}`}>
                                     <FileText className="mr-2 h-4 w-4" /> Write Draft
                                 </Link>
                             </Button>
