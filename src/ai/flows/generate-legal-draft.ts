@@ -1,10 +1,11 @@
+
 'use server';
 
 /**
  * @fileOverview Generates a legal draft based on client information and case details.
  *
  * - generateLegalDraft - A function that generates the legal draft.
- * - GenerateLegalDraftInput - The input type for the generateLegalDraft function.
+ * - GenerateLegalDraftInput - The input type for the generateLegaldraft function.
  * - GenerateLegalDraftOutput - The return type for the generateLegalDraft function.
  */
 
@@ -32,7 +33,9 @@ const prompt = ai.definePrompt({
   name: 'generateLegalDraftPrompt',
   input: {schema: GenerateLegalDraftInputSchema},
   output: {schema: GenerateLegalDraftOutputSchema},
-  prompt: `You are an AI legal assistant tasked with generating initial drafts of legal documents based on a specific template.
+  prompt: `You are an AI legal assistant tasked with generating initial drafts of legal documents.
+  Your output MUST be a single string containing the entire formatted document.
+  Use markdown for formatting, and be sure to use newline characters (\\n) to separate paragraphs, headings, and list items.
 
   **Template to follow:**
   
@@ -84,7 +87,7 @@ const prompt = ai.definePrompt({
 
   ---
 
-  **Generated Legal Draft:**`,
+  Begin the generated draft now. Ensure all text is properly formatted with newlines.`,
 });
 
 const generateLegalDraftFlow = ai.defineFlow(
