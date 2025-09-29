@@ -29,7 +29,7 @@ export default function MeetingsPage() {
                 const usersCollection = collection(db, "users");
                 const q = query(usersCollection, where("calendar_status", "==", "scheduled"));
                 const querySnapshot = await getDocs(q);
-                const meetingsData: Meeting[] = querySnapshot.docs.map((doc: QueryDocumentSnapshot<DocumentData>) => {
+                let meetingsData: Meeting[] = querySnapshot.docs.map((doc: QueryDocumentSnapshot<DocumentData>) => {
                     const data = doc.data();
                     return {
                         id: doc.id,
@@ -44,6 +44,10 @@ export default function MeetingsPage() {
                         voiceTranscript: data.voice_transcript || 'No transcript available.'
                     }
                 });
+
+                // Sort meetings by start time in descending order
+                meetingsData.sort((a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime());
+                
                 setMeetings(meetingsData);
             } catch (error) {
                 console.error("Error fetching meetings:", error);
