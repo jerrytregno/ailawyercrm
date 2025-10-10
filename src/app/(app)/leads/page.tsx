@@ -1,10 +1,10 @@
 
 'use client';
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { collection, getDocs, QueryDocumentSnapshot, DocumentData } from "firebase/firestore";
 import { format } from "date-fns";
-import { Loader2, Languages, UserCheck, FileText, Video } from "lucide-react";
+import { Loader2, Languages, UserCheck, FileText, Video, ArrowUpDown } from "lucide-react";
 import Link from 'next/link';
 
 import { db } from "@/lib/firebase";
@@ -37,6 +37,7 @@ import {
 import { translateText } from "@/ai/flows/translate-text";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 
 function LeadDetailPopup({ lead, isOpen, onClose }: { lead: Lead | null, isOpen: boolean, onClose: () => void }) {
     const [transcript, setTranscript] = useState('');
@@ -109,6 +110,8 @@ export default function LeadsPage() {
   const [lawyers, setLawyers] = useState<Lawyer[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+  const [filter, setFilter] = useState('');
+  const [sortConfig, setSortConfig] = useState<{ key: keyof Lead | 'createdAt'; direction: 'ascending' | 'descending' }>({ key: 'createdAt', direction: 'descending' });
 
   useEffect(() => {
     const fetchLeads = async () => {
@@ -161,6 +164,28 @@ export default function LeadsPage() {
     }
     fetchData();
   }, []);
+
+  const sortedAndFilteredLeads = useMemo(() => {
+    let filteredLeads = leads;
+    if (filter) {
+        filteredLeads = leads.filter(lead => 
+            lead.name.toLowerCase().includes(filter.toLowerCase()) ||
+            lead.email.toLowerCase().includes(filter.toLowerCase())
+        );
+    }
+
+    const sortedLeads = [...filteredLeads].sort((a, b) => {
+        if (a[sortConfig.key] < b[sortConfig.key]) {
+            return sortConfig.direction === 'ascending' ? -1 : 1;
+        }
+        if (a[sortConfig.key] > b[sortConfig.key]) {
+            return sortConfig.direction === 'ascending' ? 1 : -1;
+        }
+        return 0;
+    });
+
+    return sortedLeads;
+  }, [leads, filter, sortConfig]);
   
   const handleTranscriptClick = (lead: Lead) => {
     setSelectedLead(lead);
@@ -186,6 +211,20 @@ export default function LeadsPage() {
     return `${baseUrl}?${params.toString()}`;
   }
 
+  const requestSort = (key: keyof Lead | 'createdAt') => {
+    let direction: 'ascending' | 'descending' = 'ascending';
+    if (sortConfig.key === key && sortConfig.direction === 'ascending') {
+      direction = 'descending';
+    }
+    setSortConfig({ key, direction });
+  };
+
+  const getSortIndicator = (key: keyof Lead | 'createdAt') => {
+    if (sortConfig.key !== key) return null;
+    return sortConfig.direction === 'ascending' ? ' ▲' : ' ▼';
+  };
+
+
   return (
     <>
     <Card>
@@ -197,18 +236,40 @@ export default function LeadsPage() {
               Manage your leads and convert them to clients.
             </CardDescription>
           </div>
+          <Input 
+            placeholder="Filter by name or email..."
+            value={filter}
+            onChange={(e) => setFilter(e.target.value)}
+            className="max-w-sm"
+          />
         </div>
       </CardHeader>
       <CardContent>
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Name</TableHead>
+              <TableHead>
+                <Button variant="ghost" onClick={() => requestSort('name')}>
+                  Name <ArrowUpDown className="ml-2 h-4 w-4" />
+                </Button>
+              </TableHead>
               <TableHead>Contact</TableHead>
-              <TableHead>Language</TableHead>
-              <TableHead>Amount</TableHead>
+              <TableHead>
+                <Button variant="ghost" onClick={() => requestSort('language')}>
+                  Language <ArrowUpDown className="ml-2 h-4 w-4" />
+                </Button>
+              </TableHead>
+              <TableHead>
+                <Button variant="ghost" onClick={() => requestSort('amount')}>
+                  Amount <ArrowUpDown className="ml-2 h-4 w-4" />
+                </Button>
+              </TableHead>
               <TableHead>Voice Transcript</TableHead>
-              <TableHead className="hidden md:table-cell">Created At</TableHead>
+              <TableHead className="hidden md:table-cell">
+                <Button variant="ghost" onClick={() => requestSort('createdAt')}>
+                    Created At <ArrowUpDown className="ml-2 h-4 w-4" />
+                </Button>
+              </TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -217,12 +278,12 @@ export default function LeadsPage() {
                 <TableRow>
                     <TableCell colSpan={7} className="text-center h-24">Loading leads...</TableCell>
                 </TableRow>
-            ) : leads.length === 0 ? (
+            ) : sortedAndFilteredLeads.length === 0 ? (
                  <TableRow>
                     <TableCell colSpan={7} className="text-center h-24">No leads found.</TableCell>
                 </TableRow>
             ) : (
-                leads.map((lead) => (
+                sortedAndFilteredLeads.map((lead) => (
                 <TableRow key={lead.id}>
                     <TableCell className="font-medium">{lead.name}</TableCell>
                     <TableCell>
@@ -265,7 +326,7 @@ export default function LeadsPage() {
       </CardContent>
       <CardFooter>
         <div className="text-xs text-muted-foreground">
-          Showing <strong>1-{leads.length}</strong> of{" "}
+          Showing <strong>1-{sortedAndFilteredLeads.length}</strong> of{" "}
           <strong>{leads.length}</strong> leads
         </div>
       </CardFooter>

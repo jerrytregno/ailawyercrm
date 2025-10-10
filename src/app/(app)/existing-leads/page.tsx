@@ -1,10 +1,10 @@
 
 'use client';
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { collection, getDocs, query, where, QueryDocumentSnapshot, DocumentData } from "firebase/firestore";
 import { format } from "date-fns";
-import { Loader2, Languages, UserCheck, FileText, Video } from "lucide-react";
+import { Loader2, Languages, UserCheck, FileText, Video, ArrowUpDown } from "lucide-react";
 import Link from 'next/link';
 
 import { db } from "@/lib/firebase";
@@ -37,6 +37,8 @@ import {
 import { translateText } from "@/ai/flows/translate-text";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+
 
 function LeadDetailPopup({ lead, isOpen, onClose }: { lead: Lead | null, isOpen: boolean, onClose: () => void }) {
     const [transcript, setTranscript] = useState('');
@@ -109,6 +111,8 @@ export default function ExistingLeadsPage() {
   const [lawyers, setLawyers] = useState<Lawyer[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+  const [filter, setFilter] = useState('');
+  const [sortConfig, setSortConfig] = useState<{ key: keyof Lead | 'createdAt'; direction: 'ascending' | 'descending' }>({ key: 'createdAt', direction: 'descending' });
 
   useEffect(() => {
     const fetchLeads = async () => {
@@ -168,6 +172,51 @@ export default function ExistingLeadsPage() {
     fetchData();
   }, []);
   
+  const sortedAndFilteredLeads = useMemo(() => {
+    let filteredLeads = leads;
+    if (filter) {
+        filteredLeads = leads.filter(lead => 
+            lead.name.toLowerCase().includes(filter.toLowerCase()) ||
+            (lead.email && lead.email.toLowerCase().includes(filter.toLowerCase())) ||
+            (lead.ticket_id && lead.ticket_id.toLowerCase().includes(filter.toLowerCase())) ||
+            (lead.client_id && lead.client_id.toLowerCase().includes(filter.toLowerCase()))
+        );
+    }
+
+    const sortedLeads = [...filteredLeads].sort((a, b) => {
+        const key = sortConfig.key;
+        if (key === 'createdAt') {
+            const dateA = new Date(a.createdAt).getTime();
+            const dateB = new Date(b.createdAt).getTime();
+            if (dateA < dateB) return sortConfig.direction === 'ascending' ? -1 : 1;
+            if (dateA > dateB) return sortConfig.direction === 'ascending' ? 1 : -1;
+            return 0;
+        }
+
+        const valueA = a[key] ?? '';
+        const valueB = b[key] ?? '';
+
+        if (valueA < valueB) {
+            return sortConfig.direction === 'ascending' ? -1 : 1;
+        }
+        if (valueA > valueB) {
+            return sortConfig.direction === 'ascending' ? 1 : -1;
+        }
+        return 0;
+    });
+
+    return sortedLeads;
+  }, [leads, filter, sortConfig]);
+
+  const requestSort = (key: keyof Lead | 'createdAt') => {
+    let direction: 'ascending' | 'descending' = 'ascending';
+    if (sortConfig.key === key && sortConfig.direction === 'ascending') {
+      direction = 'descending';
+    }
+    setSortConfig({ key, direction });
+  };
+
+
   const handleTranscriptClick = (lead: Lead) => {
     setSelectedLead(lead);
   };
@@ -203,19 +252,45 @@ export default function ExistingLeadsPage() {
               A list of all existing leads from your database.
             </CardDescription>
           </div>
+           <Input 
+            placeholder="Filter by name, email, ticket, or client ID..."
+            value={filter}
+            onChange={(e) => setFilter(e.target.value)}
+            className="max-w-sm"
+          />
         </div>
       </CardHeader>
       <CardContent>
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Name</TableHead>
+              <TableHead>
+                <Button variant="ghost" onClick={() => requestSort('name')}>
+                    Name <ArrowUpDown className="ml-2 h-4 w-4" />
+                </Button>
+              </TableHead>
               <TableHead>Contact</TableHead>
-              <TableHead>Language</TableHead>
-              <TableHead>Ticket ID</TableHead>
-              <TableHead>Client ID</TableHead>
+              <TableHead>
+                <Button variant="ghost" onClick={() => requestSort('language')}>
+                    Language <ArrowUpDown className="ml-2 h-4 w-4" />
+                </Button>
+              </TableHead>
+              <TableHead>
+                <Button variant="ghost" onClick={() => requestSort('ticket_id')}>
+                    Ticket ID <ArrowUpDown className="ml-2 h-4 w-4" />
+                </Button>
+              </TableHead>
+              <TableHead>
+                <Button variant="ghost" onClick={() => requestSort('client_id')}>
+                    Client ID <ArrowUpDown className="ml-2 h-4 w-4" />
+                </Button>
+              </TableHead>
               <TableHead>Voice Transcript</TableHead>
-              <TableHead className="hidden md:table-cell">Created At</TableHead>
+              <TableHead className="hidden md:table-cell">
+                <Button variant="ghost" onClick={() => requestSort('createdAt')}>
+                    Created At <ArrowUpDown className="ml-2 h-4 w-4" />
+                </Button>
+              </TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -224,12 +299,12 @@ export default function ExistingLeadsPage() {
                 <TableRow>
                     <TableCell colSpan={8} className="text-center h-24">Loading existing leads...</TableCell>
                 </TableRow>
-            ) : leads.length === 0 ? (
+            ) : sortedAndFilteredLeads.length === 0 ? (
                  <TableRow>
                     <TableCell colSpan={8} className="text-center h-24">No existing leads found.</TableCell>
                 </TableRow>
             ) : (
-                leads.map((lead) => (
+                sortedAndFilteredLeads.map((lead) => (
                 <TableRow key={lead.id}>
                     <TableCell className="font-medium">{lead.name}</TableCell>
                     <TableCell>
@@ -273,7 +348,7 @@ export default function ExistingLeadsPage() {
       </CardContent>
       <CardFooter>
         <div className="text-xs text-muted-foreground">
-          Showing <strong>1-{leads.length}</strong> of{" "}
+          Showing <strong>1-{sortedAndFilteredLeads.length}</strong> of{" "}
           <strong>{leads.length}</strong> leads
         </div>
       </CardFooter>
