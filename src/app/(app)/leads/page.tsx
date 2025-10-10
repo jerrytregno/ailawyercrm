@@ -130,6 +130,9 @@ export default function LeadsPage() {
                   voice_transcript: data.voice_transcript || '',
                   status: 'New',
                   assignedTo: data.assignedTo,
+                  lead_type: data.lead_type,
+                  client_id: data.client_id,
+                  ticket_id: data.ticket_id,
               }
           }).filter(lead => lead.email || lead.whatsapp);
           setLeads(leadsData);
@@ -170,15 +173,29 @@ export default function LeadsPage() {
     if (filter) {
         filteredLeads = leads.filter(lead => 
             lead.name.toLowerCase().includes(filter.toLowerCase()) ||
-            lead.email.toLowerCase().includes(filter.toLowerCase())
+            (lead.email && lead.email.toLowerCase().includes(filter.toLowerCase())) ||
+            (lead.ticket_id && lead.ticket_id.toLowerCase().includes(filter.toLowerCase())) ||
+            (lead.client_id && lead.client_id.toLowerCase().includes(filter.toLowerCase()))
         );
     }
 
     const sortedLeads = [...filteredLeads].sort((a, b) => {
-        if (a[sortConfig.key] < b[sortConfig.key]) {
+        const key = sortConfig.key;
+        if (key === 'createdAt') {
+            const dateA = new Date(a.createdAt).getTime();
+            const dateB = new Date(b.createdAt).getTime();
+            if (dateA < dateB) return sortConfig.direction === 'ascending' ? -1 : 1;
+            if (dateA > dateB) return sortConfig.direction === 'ascending' ? 1 : -1;
+            return 0;
+        }
+
+        const valueA = a[key] ?? '';
+        const valueB = b[key] ?? '';
+
+        if (valueA < valueB) {
             return sortConfig.direction === 'ascending' ? -1 : 1;
         }
-        if (a[sortConfig.key] > b[sortConfig.key]) {
+        if (valueA > valueB) {
             return sortConfig.direction === 'ascending' ? 1 : -1;
         }
         return 0;
@@ -219,25 +236,19 @@ export default function LeadsPage() {
     setSortConfig({ key, direction });
   };
 
-  const getSortIndicator = (key: keyof Lead | 'createdAt') => {
-    if (sortConfig.key !== key) return null;
-    return sortConfig.direction === 'ascending' ? ' ▲' : ' ▼';
-  };
-
-
   return (
     <>
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between">
           <div>
-            <CardTitle>Leads</CardTitle>
+            <CardTitle>All Leads</CardTitle>
             <CardDescription>
-              Manage your leads and convert them to clients.
+              Manage all your new and existing leads.
             </CardDescription>
           </div>
           <Input 
-            placeholder="Filter by name or email..."
+            placeholder="Filter by name, email, ticket, or client ID..."
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
             className="max-w-sm"
@@ -253,15 +264,20 @@ export default function LeadsPage() {
                   Name <ArrowUpDown className="ml-2 h-4 w-4" />
                 </Button>
               </TableHead>
+              <TableHead>
+                 <Button variant="ghost" onClick={() => requestSort('lead_type')}>
+                  Type <ArrowUpDown className="ml-2 h-4 w-4" />
+                </Button>
+              </TableHead>
               <TableHead>Contact</TableHead>
               <TableHead>
-                <Button variant="ghost" onClick={() => requestSort('language')}>
-                  Language <ArrowUpDown className="ml-2 h-4 w-4" />
+                <Button variant="ghost" onClick={() => requestSort('ticket_id')}>
+                    Ticket ID <ArrowUpDown className="ml-2 h-4 w-4" />
                 </Button>
               </TableHead>
               <TableHead>
-                <Button variant="ghost" onClick={() => requestSort('amount')}>
-                  Amount <ArrowUpDown className="ml-2 h-4 w-4" />
+                <Button variant="ghost" onClick={() => requestSort('client_id')}>
+                    Client ID <ArrowUpDown className="ml-2 h-4 w-4" />
                 </Button>
               </TableHead>
               <TableHead>Voice Transcript</TableHead>
@@ -276,23 +292,28 @@ export default function LeadsPage() {
           <TableBody>
             {loading ? (
                 <TableRow>
-                    <TableCell colSpan={7} className="text-center h-24">Loading leads...</TableCell>
+                    <TableCell colSpan={8} className="text-center h-24">Loading leads...</TableCell>
                 </TableRow>
             ) : sortedAndFilteredLeads.length === 0 ? (
                  <TableRow>
-                    <TableCell colSpan={7} className="text-center h-24">No leads found.</TableCell>
+                    <TableCell colSpan={8} className="text-center h-24">No leads found.</TableCell>
                 </TableRow>
             ) : (
                 sortedAndFilteredLeads.map((lead) => (
                 <TableRow key={lead.id}>
                     <TableCell className="font-medium">{lead.name}</TableCell>
                     <TableCell>
+                        <Badge variant={lead.lead_type === 'existing_lead' ? 'secondary' : 'outline'}>
+                            {lead.lead_type === 'existing_lead' ? 'Existing' : 'New'}
+                        </Badge>
+                    </TableCell>
+                    <TableCell>
                         <div className="text-sm">{lead.email}</div>
                         <div className="text-sm text-muted-foreground">{lead.whatsapp}</div>
                     </TableCell>
-                    <TableCell>{lead.language}</TableCell>
-                    <TableCell>{lead.amount}</TableCell>
-                    <TableCell className="max-w-xs truncate">
+                    <TableCell>{lead.ticket_id}</TableCell>
+                    <TableCell>{lead.client_id}</TableCell>
+                    <TableCell className="max-w-[200px] truncate">
                       <button onClick={() => handleTranscriptClick(lead)} className="hover:underline text-left">
                         {lead.voice_transcript}
                       </button>

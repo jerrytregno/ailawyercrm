@@ -22,7 +22,6 @@ import { Button } from '@/components/ui/button';
 
 const navItems = [
   { href: '/leads', icon: GitBranch, label: 'Leads' },
-  { href: '/existing-leads', icon: Briefcase, label: 'Existing Leads' },
   { href: '/drafts', icon: FileText, label: 'Legal Drafts' },
   { href: '/meetings', icon: Video, label: 'Meetings' },
 ];
