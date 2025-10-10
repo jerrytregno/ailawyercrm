@@ -4,7 +4,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { collection, getDocs, QueryDocumentSnapshot, DocumentData } from "firebase/firestore";
 import { format } from "date-fns";
-import { Loader2, Languages, ArrowUpDown, Download } from "lucide-react";
+import { Loader2, Languages, ArrowUpDown, Download, FileText, Video } from "lucide-react";
 import Link from 'next/link';
 
 import { db } from "@/lib/firebase";
