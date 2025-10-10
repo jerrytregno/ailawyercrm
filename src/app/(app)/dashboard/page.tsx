@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -71,6 +72,10 @@ export default function DashboardPage() {
                 assignedTo: data.assignedTo || undefined,
             }
         }).filter(lead => lead.email || lead.whatsapp);
+        
+        // Sort leads by creation date, newest first
+        leadsData.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
         setLeads(leadsData);
       } catch (error) {
         console.error("Error fetching leads:", error);
