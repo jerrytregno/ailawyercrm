@@ -4,7 +4,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { collection, getDocs, QueryDocumentSnapshot, DocumentData } from "firebase/firestore";
 import { format } from "date-fns";
-import { Loader2, Languages, UserCheck, FileText, Video, ArrowUpDown } from "lucide-react";
+import { Loader2, Languages, ArrowUpDown, Download } from "lucide-react";
 import Link from 'next/link';
 
 import { db } from "@/lib/firebase";
@@ -192,6 +192,10 @@ export default function LeadsPage() {
         const valueA = a[key] ?? '';
         const valueB = b[key] ?? '';
 
+        if (typeof valueA === 'string' && typeof valueB === 'string') {
+          return sortConfig.direction === 'ascending' ? valueA.localeCompare(valueB) : valueB.localeCompare(valueA);
+        }
+
         if (valueA < valueB) {
             return sortConfig.direction === 'ascending' ? -1 : 1;
         }
@@ -235,24 +239,71 @@ export default function LeadsPage() {
     }
     setSortConfig({ key, direction });
   };
+  
+  const downloadAsCSV = (data: Lead[]) => {
+    const headers = [
+        "ID", "Name", "Email", "WhatsApp", "Language", "Amount", "Created At", 
+        "Status", "Assigned To", "Lead Type", "Client ID", "Ticket ID", "Voice Transcript"
+    ];
+    
+    const csvRows = [headers.join(',')];
+
+    const escapeCSV = (str: string) => `"${String(str || '').replace(/"/g, '""')}"`;
+
+    for(const lead of data) {
+        const assignedToName = lead.assignedTo ? getAssignedLawyerName(lead.assignedTo) : "Unassigned";
+        const values = [
+            escapeCSV(lead.id),
+            escapeCSV(lead.name),
+            escapeCSV(lead.email),
+            escapeCSV(lead.whatsapp),
+            escapeCSV(lead.language),
+            escapeCSV(lead.amount),
+            escapeCSV(format(new Date(lead.createdAt), "yyyy-MM-dd HH:mm:ss")),
+            escapeCSV(lead.status),
+            escapeCSV(assignedToName),
+            escapeCSV(lead.lead_type || 'New'),
+            escapeCSV(lead.client_id || ''),
+            escapeCSV(lead.ticket_id || ''),
+            escapeCSV(lead.voice_transcript),
+        ];
+        csvRows.push(values.join(','));
+    }
+
+    const blob = new Blob([csvRows.join('\n')], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.setAttribute('hidden', '');
+    a.setAttribute('href', url);
+    a.setAttribute('download', 'leads.csv');
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  }
 
   return (
     <>
     <Card>
       <CardHeader>
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-4">
           <div>
             <CardTitle>All Leads</CardTitle>
             <CardDescription>
               Manage all your new and existing leads.
             </CardDescription>
           </div>
-          <Input 
-            placeholder="Filter by name, email, ticket, or client ID..."
-            value={filter}
-            onChange={(e) => setFilter(e.target.value)}
-            className="max-w-sm"
-          />
+          <div className="flex items-center gap-2">
+             <Input 
+                placeholder="Filter by name, email, ticket, or client ID..."
+                value={filter}
+                onChange={(e) => setFilter(e.target.value)}
+                className="max-w-sm"
+              />
+              <Button onClick={() => downloadAsCSV(sortedAndFilteredLeads)} variant="outline">
+                <Download className="mr-2 h-4 w-4" />
+                Download CSV
+              </Button>
+          </div>
         </div>
       </CardHeader>
       <CardContent>
