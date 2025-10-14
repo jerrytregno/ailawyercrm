@@ -141,11 +141,11 @@ function LeadDetailPopup({ lead, isOpen, onClose }: { lead: Lead | null, isOpen:
             <DialogContent className="sm:max-w-2xl">
                 <DialogHeader>
                     <DialogTitle className="text-2xl">{lead.name}</DialogTitle>
-                    <DialogDescription>
-                        <Badge variant={lead.lead_type === 'existing_lead' ? 'secondary' : 'outline'}>
-                            {lead.lead_type === 'existing_lead' ? 'Existing Lead' : 'New Lead'}
-                        </Badge>
-                    </DialogDescription>
+                    <div className="pt-2">
+                      <Badge variant={lead.lead_type === 'existing_lead' ? 'secondary' : 'outline'}>
+                        {lead.lead_type === 'existing_lead' ? 'Existing Lead' : 'New Lead'}
+                      </Badge>
+                    </div>
                 </DialogHeader>
                 <div className="grid gap-6 py-4">
                     <div className="grid grid-cols-2 gap-4">
