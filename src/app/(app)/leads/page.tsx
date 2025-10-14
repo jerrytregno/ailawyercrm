@@ -4,7 +4,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { collection, getDocs, QueryDocumentSnapshot, DocumentData } from "firebase/firestore";
 import { format } from "date-fns";
-import { Loader2, Languages, ArrowUpDown, Download, FileText, Video } from "lucide-react";
+import { Loader2, Languages, ArrowUpDown, Download, FileText, Video, Mail, Phone, Clock, Link as LinkIcon, Mic } from "lucide-react";
 import Link from 'next/link';
 
 import { db } from "@/lib/firebase";
@@ -39,7 +39,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 
-function LeadDetailPopup({ lead, isOpen, onClose }: { lead: Lead | null, isOpen: boolean, onClose: () => void }) {
+function TranscriptPopup({ lead, isOpen, onClose }: { lead: Lead | null, isOpen: boolean, onClose: () => void }) {
     const [transcript, setTranscript] = useState('');
     const [isTranslated, setIsTranslated] = useState(false);
     const [isTranslating, setIsTranslating] = useState(false);
@@ -73,9 +73,7 @@ function LeadDetailPopup({ lead, isOpen, onClose }: { lead: Lead | null, isOpen:
     };
 
     const handleClose = () => {
-        setTranscript('');
-        setIsTranslated(false);
-        setIsTranslating(false);
+        // The state reset is handled by the useEffect above when lead changes.
         onClose();
     }
 
@@ -105,11 +103,118 @@ function LeadDetailPopup({ lead, isOpen, onClose }: { lead: Lead | null, isOpen:
     )
 }
 
+function LeadDetailPopup({ lead, isOpen, onClose }: { lead: Lead | null, isOpen: boolean, onClose: () => void }) {
+    const [transcript, setTranscript] = useState('');
+    const [isTranslated, setIsTranslated] = useState(false);
+    const [isTranslating, setIsTranslating] = useState(false);
+
+    useEffect(() => {
+        if (lead) {
+            setTranscript(lead.voice_transcript || 'No transcript available.');
+            setIsTranslated(false);
+        }
+    }, [lead]);
+
+    if (!lead) return null;
+
+    const handleTranslate = async () => {
+        if (!transcript || isTranslated || transcript === 'No transcript available.') return;
+        setIsTranslating(true);
+        try {
+            const result = await translateText({ text: transcript, targetLanguage: 'English' });
+            if (result) {
+              setTranscript(result);
+              setIsTranslated(true);
+            } else {
+              setTranscript("Sorry, translation failed. Please try again.");
+            }
+        } catch (error) {
+            console.error("Translation failed:", error);
+            setTranscript("Sorry, an error occurred during translation.");
+        } finally {
+            setIsTranslating(false);
+        }
+    };
+
+    return (
+        <Dialog open={isOpen} onOpenChange={onClose}>
+            <DialogContent className="sm:max-w-2xl">
+                <DialogHeader>
+                    <DialogTitle className="text-2xl">{lead.name}</DialogTitle>
+                    <DialogDescription>
+                        <Badge variant={lead.lead_type === 'existing_lead' ? 'secondary' : 'outline'}>
+                            {lead.lead_type === 'existing_lead' ? 'Existing Lead' : 'New Lead'}
+                        </Badge>
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-6 py-4">
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-1">
+                            <h4 className="text-sm font-medium text-muted-foreground">Contact</h4>
+                             <div className="flex items-center gap-2 text-sm">
+                                <Mail className="h-4 w-4" />
+                                <span>{lead.email || 'N/A'}</span>
+                            </div>
+                            <div className="flex items-center gap-2 text-sm">
+                                <Phone className="h-4 w-4" />
+                                <span>{lead.whatsapp || 'N/A'}</span>
+                            </div>
+                        </div>
+                        <div className="space-y-1">
+                             <h4 className="text-sm font-medium text-muted-foreground">Identifiers</h4>
+                             <p className="text-sm"><strong>Ticket ID:</strong> {lead.ticket_id || 'N/A'}</p>
+                             <p className="text-sm"><strong>Client ID:</strong> {lead.client_id || 'N/A'}</p>
+                        </div>
+                    </div>
+                     {lead.calendar_status === 'scheduled' && (
+                        <div>
+                            <h4 className="text-sm font-medium text-muted-foreground mb-2">Meeting Details</h4>
+                            <div className="p-3 rounded-lg border bg-muted/50 space-y-2">
+                                 <div className="flex items-center gap-2">
+                                    <Clock className="h-4 w-4" />
+                                    <p className="text-sm">
+                                        {lead.start_time ? format(new Date(lead.start_time), "MMM d, yyyy 'at' h:mm a") : 'No start time'}
+                                    </p>
+                                </div>
+                                {lead.meeting_link && (
+                                    <Button asChild variant="outline" size="sm">
+                                        <a href={lead.meeting_link} target="_blank" rel="noopener noreferrer">
+                                            <LinkIcon className="mr-2 h-4 w-4" /> Join Meeting
+                                        </a>
+                                    </Button>
+                                )}
+                            </div>
+                        </div>
+                     )}
+
+                    <div>
+                        <h4 className="text-sm font-medium text-muted-foreground flex items-center gap-2 mb-2"><Mic className="h-4 w-4" /> Voice Transcript</h4>
+                        <ScrollArea className="h-32 border rounded-md p-3 bg-muted/50">
+                            <p className="text-sm text-muted-foreground">{transcript}</p>
+                        </ScrollArea>
+                        <div className="mt-2">
+                             <Button onClick={handleTranslate} disabled={isTranslating || isTranslated} size="sm">
+                                {isTranslating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Languages className="mr-2 h-4 w-4" />}
+                                Translate to English
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+                <DialogFooter>
+                    <Button variant="outline" onClick={onClose}>Close</Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    );
+}
+
+
 export default function LeadsPage() {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [lawyers, setLawyers] = useState<Lawyer[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+  const [selectedTranscriptLead, setSelectedTranscriptLead] = useState<Lead | null>(null);
+  const [selectedDetailLead, setSelectedDetailLead] = useState<Lead | null>(null);
   const [filter, setFilter] = useState('');
   const [sortConfig, setSortConfig] = useState<{ key: keyof Lead | 'createdAt'; direction: 'ascending' | 'descending' }>({ key: 'createdAt', direction: 'descending' });
 
@@ -133,6 +238,10 @@ export default function LeadsPage() {
                   lead_type: data.lead_type,
                   client_id: data.client_id,
                   ticket_id: data.ticket_id,
+                  calendar_status: data.calendar_status,
+                  meeting_link: data.meeting_link,
+                  start_time: data.start_time,
+                  end_time: data.end_time,
               }
           }).filter(lead => lead.email || lead.whatsapp);
           setLeads(leadsData);
@@ -209,12 +318,12 @@ export default function LeadsPage() {
   }, [leads, filter, sortConfig]);
   
   const handleTranscriptClick = (lead: Lead) => {
-    setSelectedLead(lead);
+    setSelectedTranscriptLead(lead);
+  };
+  const handleNameClick = (lead: Lead) => {
+    setSelectedDetailLead(lead);
   };
 
-  const handleClosePopup = () => {
-    setSelectedLead(null);
-  };
 
   const getAssignedLawyerName = (lawyerId: string) => {
     const lawyer = lawyers.find(l => l.id === lawyerId);
@@ -352,7 +461,11 @@ export default function LeadsPage() {
             ) : (
                 sortedAndFilteredLeads.map((lead) => (
                 <TableRow key={lead.id}>
-                    <TableCell className="font-medium">{lead.name}</TableCell>
+                    <TableCell className="font-medium">
+                       <button onClick={() => handleNameClick(lead)} className="hover:underline text-left">
+                         {lead.name}
+                       </button>
+                    </TableCell>
                     <TableCell>
                         <Badge variant={lead.lead_type === 'existing_lead' ? 'secondary' : 'outline'}>
                             {lead.lead_type === 'existing_lead' ? 'Existing' : 'New'}
@@ -403,7 +516,8 @@ export default function LeadsPage() {
         </div>
       </CardFooter>
     </Card>
-    <LeadDetailPopup lead={selectedLead} isOpen={!!selectedLead} onClose={handleClosePopup} />
+    <TranscriptPopup lead={selectedTranscriptLead} isOpen={!!selectedTranscriptLead} onClose={() => setSelectedTranscriptLead(null)} />
+    <LeadDetailPopup lead={selectedDetailLead} isOpen={!!selectedDetailLead} onClose={() => setSelectedDetailLead(null)} />
     </>
   );
 }

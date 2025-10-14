@@ -41,6 +41,10 @@ export type Lead = {
   client_id?: string;
   ticket_id?: string;
   lead_source?: string;
+  calendar_status?: 'scheduled' | string;
+  meeting_link?: string;
+  start_time?: string;
+  end_time?: string;
 };
 
 export type Appointment = {
