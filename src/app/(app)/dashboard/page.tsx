@@ -10,7 +10,8 @@ import {
   Calendar,
   Users,
   DollarSign,
-  Gavel
+  Gavel,
+  Download
 } from "lucide-react";
 import { format } from "date-fns";
 import { collection, getDocs, QueryDocumentSnapshot, DocumentData } from "firebase/firestore";
@@ -149,6 +150,51 @@ export default function DashboardPage() {
     }
   }, [leads, lawyers, loadingLeads, loadingLawyers]);
 
+  const getAssignedLawyerName = (lawyerId: string) => {
+    const lawyer = lawyers.find(l => l.id === lawyerId);
+    return lawyer ? lawyer.name : 'Unknown';
+  };
+  
+  const downloadAsCSV = (data: Lead[]) => {
+    const headers = [
+        "ID", "Name", "Email", "WhatsApp", "Language", "Amount", "Created At", 
+        "Status", "Assigned To", "Lead Type", "Client ID", "Ticket ID", "Voice Transcript"
+    ];
+    
+    const csvRows = [headers.join(',')];
+
+    const escapeCSV = (str: string) => `"${String(str || '').replace(/"/g, '""')}"`;
+
+    for(const lead of data) {
+        const assignedToName = lead.assignedTo ? getAssignedLawyerName(lead.assignedTo) : "Unassigned";
+        const values = [
+            escapeCSV(lead.id),
+            escapeCSV(lead.name),
+            escapeCSV(lead.email),
+            escapeCSV(lead.whatsapp),
+            escapeCSV(lead.language),
+            escapeCSV(lead.amount),
+            escapeCSV(format(new Date(lead.createdAt), "yyyy-MM-dd HH:mm:ss")),
+            escapeCSV(lead.status),
+            escapeCSV(assignedToName),
+            escapeCSV(lead.lead_type || 'New'),
+            escapeCSV(lead.client_id || ''),
+            escapeCSV(lead.ticket_id || ''),
+            escapeCSV(lead.voice_transcript),
+        ];
+        csvRows.push(values.join(','));
+    }
+
+    const blob = new Blob([csvRows.join('\n')], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+a.setAttribute('hidden', '');
+    a.setAttribute('href', url);
+    a.setAttribute('download', 'all_leads.csv');
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  }
 
   return (
     <div className="flex flex-col gap-6">
@@ -168,12 +214,12 @@ export default function DashboardPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              New Leads
+              Total Leads
             </CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">+{leads.length}</div>
+            <div className="text-2xl font-bold">{loadingLeads ? '...' : leads.length}</div>
             <p className="text-xs text-muted-foreground">+5 since last month</p>
           </CardContent>
         </Card>
@@ -211,11 +257,17 @@ export default function DashboardPage() {
                   New leads assigned to available lawyers.
                 </CardDescription>
               </div>
-              <Button asChild size="sm">
-                <Link href="/leads">
-                  Manage Leads
-                </Link>
-              </Button>
+              <div className="flex items-center gap-2">
+                 <Button onClick={() => downloadAsCSV(leads)} variant="outline" size="sm">
+                    <Download className="mr-2 h-4 w-4" />
+                    Download All Leads
+                 </Button>
+                 <Button asChild size="sm">
+                    <Link href="/leads">
+                    Manage Leads
+                    </Link>
+                </Button>
+              </div>
             </div>
           </CardHeader>
           <CardContent>
@@ -304,5 +356,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-
-    
