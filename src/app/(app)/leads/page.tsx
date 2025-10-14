@@ -244,7 +244,36 @@ export default function LeadsPage() {
                   end_time: data.end_time,
               }
           }).filter(lead => lead.email || lead.whatsapp);
-          setLeads(leadsData);
+          
+          // Merge leads with the same email
+          const mergedLeadsMap = new Map<string, Lead>();
+          leadsData.forEach(lead => {
+            if (lead.email) {
+              const existingLead = mergedLeadsMap.get(lead.email);
+              if (existingLead) {
+                // If lead exists, merge by taking the latest one and marking as existing.
+                if (new Date(lead.createdAt) > new Date(existingLead.createdAt)) {
+                   mergedLeadsMap.set(lead.email, {
+                    ...lead,
+                    lead_type: 'existing_lead'
+                  });
+                } else {
+                   mergedLeadsMap.set(lead.email, {
+                    ...existingLead,
+                    lead_type: 'existing_lead'
+                  });
+                }
+              } else {
+                mergedLeadsMap.set(lead.email, lead);
+              }
+            } else {
+              // For leads without email, use ID to avoid collision
+              mergedLeadsMap.set(lead.id, lead);
+            }
+          });
+          const mergedLeads = Array.from(mergedLeadsMap.values());
+          setLeads(mergedLeads);
+
         } catch (error) {
           console.error("Error fetching leads:", error);
         }
@@ -521,3 +550,5 @@ export default function LeadsPage() {
     </>
   );
 }
+
+    

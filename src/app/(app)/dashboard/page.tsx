@@ -73,10 +73,39 @@ export default function DashboardPage() {
             }
         }).filter(lead => lead.email || lead.whatsapp);
         
-        // Sort leads by creation date, newest first
-        leadsData.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        // Merge leads with the same email
+        const mergedLeadsMap = new Map<string, Lead>();
+        leadsData.forEach(lead => {
+          if (lead.email) {
+            const existingLead = mergedLeadsMap.get(lead.email);
+            if (existingLead) {
+              // If lead exists, merge by taking the latest one.
+              if (new Date(lead.createdAt) > new Date(existingLead.createdAt)) {
+                mergedLeadsMap.set(lead.email, {
+                    ...lead,
+                    lead_type: 'existing_lead' // Mark as existing
+                });
+              } else {
+                 mergedLeadsMap.set(lead.email, {
+                    ...existingLead,
+                    lead_type: 'existing_lead' // Mark as existing
+                });
+              }
+            } else {
+              mergedLeadsMap.set(lead.email, lead);
+            }
+          } else {
+            // For leads without email, use ID to avoid collision (or handle as unique)
+             mergedLeadsMap.set(lead.id, lead);
+          }
+        });
 
-        setLeads(leadsData);
+        const mergedLeads = Array.from(mergedLeadsMap.values());
+        
+        // Sort leads by creation date, newest first
+        mergedLeads.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+        setLeads(mergedLeads);
       } catch (error) {
         console.error("Error fetching leads:", error);
       } finally {
@@ -204,7 +233,7 @@ export default function DashboardPage() {
                     <TableCell colSpan={3} className="text-center h-24">Loading leads...</TableCell>
                   </TableRow>
                 ) : leadsWithLawyers.length > 0 ? (
-                  leadsWithLawyers.map((lead) => (
+                  leadsWithLawyers.slice(0, 5).map((lead) => (
                     <TableRow key={lead.id}>
                       <TableCell>
                         <div className="font-medium">{lead.name}</div>
@@ -275,3 +304,5 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+    
