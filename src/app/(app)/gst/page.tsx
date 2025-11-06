@@ -244,7 +244,7 @@ export default function GstLeadsPage() {
                   end_time: data.end_time,
                   lead_source: data.lead_source,
               }
-          }).filter(lead => lead.email || lead.whatsapp);
+          });
           
           setLeads(leadsData);
         } catch (error) {
