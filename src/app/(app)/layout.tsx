@@ -16,7 +16,7 @@ import {
   SidebarFooter,
 } from '@/components/ui/sidebar';
 import { Logo } from '@/components/logo';
-import { Users, FileText, Settings, Search, Bell, GitBranch, CalendarDays, LogOut, Briefcase, Video } from 'lucide-react';
+import { Users, FileText, Settings, Search, Bell, GitBranch, CalendarDays, LogOut, Briefcase, Video, Landmark } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 
@@ -24,6 +24,7 @@ const navItems = [
   { href: '/leads', icon: GitBranch, label: 'Leads' },
   { href: '/drafts', icon: FileText, label: 'Legal Drafts' },
   { href: '/meetings', icon: Video, label: 'Meetings' },
+  { href: '/gst', icon: Landmark, label: 'GST' },
 ];
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
