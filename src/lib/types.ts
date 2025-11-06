@@ -45,6 +45,7 @@ export type Lead = {
   meeting_link?: string;
   start_time?: string;
   end_time?: string;
+  tags?: string[];
 };
 
 export type Appointment = {

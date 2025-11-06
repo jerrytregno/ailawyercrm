@@ -220,11 +220,22 @@ export default function GstLeadsPage() {
   useEffect(() => {
     const fetchGstLeads = async () => {
         try {
-          const q = query(collection(db, "users"), where("lead_source", "==", "GST"));
-          const querySnapshot = await getDocs(q);
-          const leadsData: Lead[] = querySnapshot.docs.map((doc: QueryDocumentSnapshot<DocumentData>) => {
+          const leadSourceQuery = query(collection(db, "users"), where("lead_source", "==", "GST"));
+          const tagsQuery = query(collection(db, "users"), where("tags", "array-contains", "gst"));
+          
+          const [leadSourceSnapshot, tagsSnapshot] = await Promise.all([
+            getDocs(leadSourceQuery),
+            getDocs(tagsQuery)
+          ]);
+
+          const leadsMap = new Map<string, Lead>();
+          
+          const processSnapshot = (snapshot: QueryDocumentSnapshot<DocumentData>[]) => {
+            snapshot.forEach((doc) => {
+              if (leadsMap.has(doc.id)) return;
+
               const data = doc.data();
-              return {
+              const lead: Lead = {
                   id: doc.id,
                   name: data.name || '',
                   email: data.email || '',
@@ -243,10 +254,16 @@ export default function GstLeadsPage() {
                   start_time: data.start_time,
                   end_time: data.end_time,
                   lead_source: data.lead_source,
-              }
-          });
+                  tags: data.tags,
+              };
+              leadsMap.set(doc.id, lead);
+            });
+          }
+
+          processSnapshot(leadSourceSnapshot.docs);
+          processSnapshot(tagsSnapshot.docs);
           
-          setLeads(leadsData);
+          setLeads(Array.from(leadsMap.values()));
         } catch (error) {
           console.error("Error fetching GST leads:", error);
         }
