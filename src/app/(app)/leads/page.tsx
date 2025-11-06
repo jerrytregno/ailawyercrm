@@ -242,8 +242,9 @@ export default function LeadsPage() {
                   meeting_link: data.meeting_link,
                   start_time: data.start_time,
                   end_time: data.end_time,
+                  lead_source: data.lead_source,
               }
-          }).filter(lead => lead.email || lead.whatsapp);
+          }).filter(lead => lead.email || lead.whatsapp).filter(lead => lead.lead_source !== 'GST');
           
           // Merge leads with the same email
           const mergedLeadsMap = new Map<string, Lead>();
@@ -550,5 +551,7 @@ export default function LeadsPage() {
     </>
   );
 }
+
+    
 
     
