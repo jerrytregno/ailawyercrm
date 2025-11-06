@@ -243,8 +243,10 @@ export default function LeadsPage() {
                   start_time: data.start_time,
                   end_time: data.end_time,
                   lead_source: data.lead_source,
+                  tags: data.tags,
               }
-          }).filter(lead => lead.email || lead.whatsapp).filter(lead => lead.lead_source !== 'GST');
+          }).filter(lead => lead.email || lead.whatsapp)
+            .filter(lead => lead.lead_source !== 'GST' && (!lead.tags || !lead.tags.includes('gst')));
           
           // Merge leads with the same email
           const mergedLeadsMap = new Map<string, Lead>();
