@@ -26,6 +26,17 @@ export type Client = {
   cases: Case[];
 };
 
+export type BrowserInfo = {
+  cookiesEnabled: boolean;
+  language: string;
+  platform: string;
+  screenResolution: string;
+  timeZone: string;
+  userAgent: string;
+  vendor: string;
+  windowSize: string;
+}
+
 export type Lead = {
   id: string;
   name: string;
@@ -46,6 +57,9 @@ export type Lead = {
   start_time?: string;
   end_time?: string;
   tags?: string[];
+  clarityUserId?: string;
+  deviceType?: "Mobile" | "Web/Desktop" | string;
+  browserInfo?: BrowserInfo;
 };
 
 export type Appointment = {
