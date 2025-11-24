@@ -205,51 +205,66 @@ const BrowserInfoPopup = ({
 const TranscriptPopup = ({ lead, isOpen, onClose }: { lead: Lead | null, isOpen: boolean, onClose: () => void }) => {
   if (!isOpen || !lead) return null
 
-  // Helper to parse and style the transcript lines
   const renderTranscriptContent = (text: string) => {
     if (!text) return <p className="text-muted-foreground italic">No transcript available.</p>;
 
-    // 1. Group lines into message blocks
-    const lines = text.split('\n');
-    const messages: { role: string; content: string }[] = [];
-    let currentMessage: { role: string; content: string } | null = null;
+    const rawLines = text.split('\n');
+    const uniqueMessages: { role: string; content: string }[] = [];
+    
+    let lastRole = '';
+    let lastNormalizedContent = ''; // Store the "cleaned" version for comparison
 
-    lines.forEach((line) => {
+    // Helper to clean text for comparison (removes punctuation/spaces/case)
+    const normalize = (str: string) => str.toLowerCase().replace(/[^a-z0-9]/g, '');
+
+    rawLines.forEach((line) => {
       const cleanLine = line.trim();
       if (!cleanLine) return;
 
-      const isUser = cleanLine.toLowerCase().startsWith('user:');
-      const isAssistant = cleanLine.toLowerCase().startsWith('assistant:');
+      let role = 'system';
+      let content = cleanLine;
 
-      if (isUser || isAssistant) {
-        // If we were building a message, save it now
-        if (currentMessage) {
-          messages.push(currentMessage);
-        }
-        // Start a new message block
-        currentMessage = {
-          role: isUser ? 'user' : 'assistant',
-          content: cleanLine.replace(/^(user|assistant):/i, '').trim()
-        };
+      if (cleanLine.toLowerCase().startsWith('user:')) {
+        role = 'user';
+        content = cleanLine.substring(5).trim();
+      } else if (cleanLine.toLowerCase().startsWith('assistant:')) {
+        role = 'assistant';
+        content = cleanLine.substring(10).trim();
+      }
+
+      // Generate a normalized version for checking
+      const currentNormalized = normalize(content);
+
+      // ⚡️ ENHANCED DEDUPLICATION ⚡️
+      // 1. Check if roles match
+      // 2. Check if normalized content is identical OR if one contains the other
+      // (This catches "Hello." vs "Hello" vs "Hello -")
+      if (role === lastRole && (
+          currentNormalized === lastNormalizedContent || 
+          (lastNormalizedContent.length > 3 && lastNormalizedContent.includes(currentNormalized)) ||
+          (currentNormalized.length > 3 && currentNormalized.includes(lastNormalizedContent))
+      )) {
+        return; // Skip duplicate
+      }
+
+      if (role === 'user' || role === 'assistant') {
+        uniqueMessages.push({ role, content });
+        lastRole = role;
+        lastNormalizedContent = currentNormalized;
       } else {
-        // This line has no prefix (like a bullet point), so append it to the CURRENT message
-        if (currentMessage) {
-          currentMessage.content += '\n' + cleanLine;
+        // Handle system messages / multiline appends
+        if (uniqueMessages.length > 0) {
+           uniqueMessages[uniqueMessages.length - 1].content += '\n' + content;
+           // Update the normalized content to include the appended text
+           lastNormalizedContent += normalize(content);
         } else {
-          // Edge case: Text at the very start with no prefix
-          messages.push({ role: 'system', content: cleanLine });
+           uniqueMessages.push({ role: 'system', content });
         }
       }
     });
-    
-    // Don't forget to push the last message!
-    if (currentMessage) {
-      messages.push(currentMessage);
-    }
 
-    // 2. Render the grouped messages
-    return messages.map((msg, index) => {
-      // Helper to render simple markdown bolding (**text**)
+    // Rendering logic remains the same...
+    return uniqueMessages.map((msg, index) => {
       const formatContent = (content: string) => {
         return content.split(/(\*\*.*?\*\*)/).map((part, i) => 
           part.startsWith('**') && part.endsWith('**') 
@@ -265,9 +280,7 @@ const TranscriptPopup = ({ lead, isOpen, onClose }: { lead: Lead | null, isOpen:
               <div className="flex items-center gap-2 mb-1">
                 <span className="text-[10px] font-bold uppercase tracking-wider text-blue-600 bg-blue-100 px-2 py-0.5 rounded-full">User</span>
               </div>
-              <div className="text-sm text-slate-800 leading-relaxed whitespace-pre-wrap">
-                {msg.content}
-              </div>
+              <p className="text-sm text-slate-800 leading-relaxed whitespace-pre-wrap">{msg.content}</p>
             </div>
           </div>
         );
@@ -280,20 +293,13 @@ const TranscriptPopup = ({ lead, isOpen, onClose }: { lead: Lead | null, isOpen:
               <div className="flex items-center justify-between mb-1">
                 <span className="text-[10px] font-bold uppercase tracking-wider text-green-600 bg-green-100 px-2 py-0.5 rounded-full">Vakilsearch AI</span>
               </div>
-              <div className="text-sm text-slate-800 leading-relaxed whitespace-pre-wrap">
-                {formatContent(msg.content)}
-              </div>
+              <p className="text-sm text-slate-800 leading-relaxed whitespace-pre-wrap">{formatContent(msg.content)}</p>
             </div>
           </div>
         );
       }
 
-      // Fallback for system lines
-      return (
-        <div key={index} className="mb-2 text-xs text-center text-slate-400 italic py-2">
-          {msg.content}
-        </div>
-      );
+      return <div key={index} className="mb-2 text-xs text-center text-slate-400 italic">{msg.content}</div>;
     });
   };
 
@@ -305,25 +311,17 @@ const TranscriptPopup = ({ lead, isOpen, onClose }: { lead: Lead | null, isOpen:
             <MessageSquare className="h-5 w-5 text-primary" />
             Conversation Transcript
           </DialogTitle>
-          <DialogDescription>
-            Full conversation history for {lead.name}
-          </DialogDescription>
+          <DialogDescription>Full conversation history for {lead.name}</DialogDescription>
         </DialogHeader>
-        
         <div className="flex-1 overflow-y-auto p-4 border rounded-md bg-white/50">
            {renderTranscriptContent(lead.voice_transcript)}
         </div>
-
         <div className="flex items-center justify-between pt-4 mt-2 border-t">
-          <Button variant="outline" className="gap-2" onClick={() => alert("Translation logic to be implemented")}>
-            <Languages className="h-4 w-4" />
-            Translate to English
+          <Button variant="outline" className="gap-2" onClick={() => alert("Translation feature coming soon")}>
+            <Languages className="h-4 w-4" /> Translate
           </Button>
-          <Button onClick={onClose}>
-            Close
-          </Button>
+          <Button onClick={onClose}>Close</Button>
         </div>
-
       </DialogContent>
     </Dialog>
   )
@@ -407,6 +405,7 @@ export default function LeadsPage() {
 
         const mergedLeadsMap = new Map<string, Lead>()
         leadsData.forEach((lead) => {
+          if(lead.email === 'test@gmail.com') console.log(lead)
           if (lead.email) {
             const existingLead = mergedLeadsMap.get(lead.email)
             if (existingLead) {
